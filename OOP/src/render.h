@@ -12,6 +12,15 @@
 
 struct GLFWwindow;
 
+struct Buffer
+{
+	GLuint  handle;
+	GLenum  type;
+	unsigned int     size;
+	unsigned int     head;
+	void* data;
+};
+
 class RenderModule : public Module
 {
 public:
@@ -38,6 +47,8 @@ private:
 	glm::ivec2	display_size;
 };
 
+// OpenGL callbacks
+
 void on_gl_error(GLenum _source, GLenum _type, GLuint _id, GLenum _severity, GLsizei _length, const GLchar* _message, const void* _user_param);
 
 void on_glfw_mouse_event(GLFWwindow* _window, int _button, int _event, int _modifiers);
@@ -53,5 +64,29 @@ void on_glfw_char_event(GLFWwindow* _window, unsigned int _character);
 void on_glfw_resize_framebuffer(GLFWwindow* _window, int _width, int _height);
 
 void on_glfw_close_window(GLFWwindow* _window);
+
+// Buffer Managemen
+
+Buffer CreateBuffer(unsigned int size, GLenum type, GLenum usage);
+
+void PushAlignedData(Buffer& buffer, const void* data, unsigned int size, unsigned int alignment);
+
+void BindBuffer(const Buffer& buffer);
+void AlignHead(Buffer& buffer, unsigned int alignment);
+
+void MapBuffer(Buffer& buffer, GLenum access);
+void UnmapBuffer(Buffer& buffer);
+
+#define CreateConstantBuffer(size) CreateBuffer(size, GL_UNIFORM_BUFFER, GL_STREAM_DRAW);
+#define CreateStaticVertexBuffer(size) CreateBuffer(size, GL_ARRAY_BUFFER, GL_STATIC_DRAW);
+#define CreateStaticIndexBuffer(size) CreateBuffer(size, GL_ELEMENT_ARRAY_BUFFER, GL_STATIC_DRAW);
+
+#define PushData(buffer, data, size) PushAlignedData(buffer, data, size, 1);
+#define PushUInt(buffer, value) {unsigned int v = value; PushAlignedData(buffer, &v, sizeof(v), 4);}
+#define PushFloat(buffer, value) {float v = value; PushAlignedData(buffer, &v, sizeof(v), 4);}
+#define PushVec3(buffer, value) PushAlignedData(buffer, value_ptr(value), sizeof(value), sizeof(glm::vec4))
+#define PushVec4(buffer, value) PushAlignedData(buffer, value_ptr(value), sizeof(value), sizeof(glm::vec4))
+#define PushMat3(buffer, value) PushAlignedData(buffer, value_ptr(value), sizeof(value), sizeof(glm::vec4))
+#define PushMat4(buffer, value) PushAlignedData(buffer, value_ptr(value), sizeof(value), sizeof(glm::vec4))
 
 #endif // !__RENDERMODULE_H__

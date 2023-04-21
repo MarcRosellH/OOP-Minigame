@@ -101,6 +101,8 @@ void RenderModule::set_display_size(const int _new_width, const int _new_height)
 	display_size = glm::ivec2(_new_width, _new_height);
 }
 
+// OpenGL callbacks
+
 void on_gl_error(GLenum _source, GLenum _type, GLuint _id, GLenum _severity, GLsizei _length, const GLchar* _message, const void* _user_param)
 {
     if (_severity == GL_DEBUG_SEVERITY_NOTIFICATION)
@@ -226,4 +228,62 @@ void on_glfw_close_window(GLFWwindow* _window)
 {
 	App* app = (App*)glfwGetWindowUserPointer(_window);
 	app->quit_app();
+}
+
+// Buffer Management
+
+bool IsPowerOf2(unsigned int value)
+{
+	return value && !(value & (value - 1));
+}
+
+unsigned int Align(unsigned int value, unsigned int alignment)
+{
+	return (value + alignment - 1) & ~(alignment - 1);
+}
+
+Buffer CreateBuffer(unsigned int size, GLenum type, GLenum usage)
+{
+	Buffer buffer = {};
+	buffer.size = size;
+	buffer.type = type;
+
+	glGenBuffers(1, &buffer.handle);
+	glBindBuffer(type, buffer.handle);
+	glBufferData(type, buffer.size, NULL, usage);
+	glBindBuffer(type, 0);
+
+	return buffer;
+}
+
+void BindBuffer(const Buffer& buffer)
+{
+	glBindBuffer(buffer.type, buffer.handle);
+}
+
+void MapBuffer(Buffer& buffer, GLenum access)
+{
+	glBindBuffer(buffer.type, buffer.handle);
+	buffer.data = (unsigned char*)glMapBuffer(buffer.type, access);
+	buffer.head = 0;
+}
+
+void UnmapBuffer(Buffer& buffer)
+{
+	glUnmapBuffer(buffer.type);
+	glBindBuffer(buffer.type, 0);
+}
+
+void AlignHead(Buffer& buffer, unsigned int alignment)
+{
+	ASSERT(IsPowerOf2(alignment), "The alignment must be a power of 2");
+	buffer.head = Align(buffer.head, alignment);
+}
+
+void PushAlignedData(Buffer& buffer, const void* data, unsigned int size, unsigned int alignment)
+{
+	ASSERT(buffer.data != NULL, "The buffer must be mapped first");
+	AlignHead(buffer, alignment);
+	memcpy((unsigned char*)buffer.data + buffer.head, data, size);
+	buffer.head += size;
 }
