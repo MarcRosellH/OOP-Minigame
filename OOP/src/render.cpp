@@ -18,7 +18,10 @@
 
 #include "utils.h"
 
-RenderModule::RenderModule(App* _app) : Module(_app), window(nullptr), display_size(glm::ivec2(0,0))
+RenderModule::RenderModule(App* _app) : Module(_app), window(nullptr), display_size(glm::ivec2(0,0)), deferred_geometry_pass_program_index(NULL), deferred_geometry_program_uTexture(NULL),
+                                        deferred_lighting_pass_program_index(NULL), deferred_lighting_program_uGDiffuse(NULL), deferred_lighting_program_uGNormals(NULL),
+                                        deferred_lighting_program_uGPosition(NULL), depth_attachment_handle(NULL), diffuse_attachment_handle(NULL), final_render_attachment_handle(NULL),
+                                        framebuffer_final(NULL), framebuffer_geometry(NULL), normals_attachment_handle(NULL), position_attachment_handle(NULL)
 {
 }
 
