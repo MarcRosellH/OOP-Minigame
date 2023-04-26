@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <Windows.h>
 #include <assert.h>
+#include <string>
 
 #define RELEASE(x)\
 	{\
@@ -31,5 +32,9 @@ void log(const char _file[], int _line, const char* _format, ...);
 #define MAX(a,b) ((a)>(b)) ? (a) : (b)
 
 #define ASSERT(condition, message) assert((condition) && message)
+
+#define ARRAY_COUNT(arr) (sizeof(arr)/sizeof(arr[0]))
+
+std::string read_text_file(const char* _file_path);
 
 #endif // !__UTILS_H__

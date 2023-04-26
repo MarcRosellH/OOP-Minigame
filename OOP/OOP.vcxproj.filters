@@ -28,6 +28,9 @@
     <Filter Include="Glad">
       <UniqueIdentifier>{b2e25764-9ca3-4540-ada3-10ee12722876}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shaders">
+      <UniqueIdentifier>{d5db6e7c-af86-4728-ae91-4f35ed640c2b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">
@@ -74,5 +77,10 @@
     <ClInclude Include="externals\glad\include\glad\khrplatform.h">
       <Filter>Glad</Filter>
     </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="working_directory\shaders.glsl">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

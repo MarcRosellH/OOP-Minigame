@@ -15,3 +15,27 @@ void log(const char _file[], int _line, const char* _format, ...)
 	sprintf_s(tmp_string2, 4096, "\n%s(%d): %s", _file, _line, tmp_string);
 	OutputDebugString(tmp_string2);
 }
+
+std::string read_text_file(const char* _file_path)
+{
+	std::string ret;
+
+	FILE* file = fopen(_file_path, "rb");
+
+	if (file)
+	{
+		fseek(file, 0, SEEK_END);
+		unsigned int length = ftell(file);
+		fseek(file, 0, SEEK_SET);
+		char* content = new char[length];
+		fread(content, sizeof(char), length, file);
+		ret = content;
+		fclose(file);
+	}
+	else
+	{
+		LOG("fopen() function failed reading file %s", _file_path);
+	}
+
+	return ret;
+}

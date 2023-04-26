@@ -153,6 +153,9 @@
     <ClInclude Include="src\render.h" />
     <ClInclude Include="src\utils.h" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="working_directory\shaders.glsl" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

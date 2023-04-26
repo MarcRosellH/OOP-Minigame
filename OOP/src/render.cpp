@@ -72,6 +72,176 @@ bool RenderModule::initialize()
 		glDebugMessageCallback(on_gl_error, app);
 	}
 
+    // [Deferred Render] Geometry Pass Program
+    deferred_geometry_pass_program_index = load_shader_program("shaders.glsl", "DEFERRED_GEOMETRY_PASS");
+
+    ShaderProgram& deferred_geo_pass_program = shader_programs[deferred_geometry_pass_program_index];
+    GLint deferred_geo_attribute_count;
+    glGetProgramiv(deferred_geo_pass_program.handle, GL_ACTIVE_ATTRIBUTES, &deferred_geo_attribute_count);
+
+    for (GLint i = 0; i < deferred_geo_attribute_count; ++i)
+    {
+        GLchar attr_name[32];
+        GLsizei attr_len;
+        GLint attr_size;
+        GLenum attr_type;
+
+        glGetActiveAttrib(deferred_geo_pass_program.handle, i,
+            ARRAY_COUNT(attr_name),
+            &attr_len,
+            &attr_size,
+            &attr_type,
+            attr_name);
+
+        GLint attr_location = glGetAttribLocation(deferred_geo_pass_program.handle, attr_name);
+
+        deferred_geo_pass_program.vertex_input_layout.attributes.push_back({ (unsigned char)attr_location, get_attric_component_count(attr_type) });
+    }
+
+    deferred_geometry_program_uTexture = glGetUniformLocation(deferred_geo_pass_program.handle, "uTexture");
+
+    // [Deferred Render] Lighting Pass Program
+    deferred_lighting_pass_program_index = load_shader_program("shaders.glsl", "DEFERRED_LIGHTING_PASS");
+
+    ShaderProgram& deferred_lighting_pass_program = shader_programs[deferred_lighting_pass_program_index];
+    GLint deferred_light_attribute_count;
+    glGetProgramiv(deferred_lighting_pass_program.handle, GL_ACTIVE_ATTRIBUTES, &deferred_light_attribute_count);
+
+    for (GLint i = 0; i < deferred_light_attribute_count; ++i)
+    {
+        GLchar attr_name[32];
+        GLsizei attr_len;
+        GLint attr_size;
+        GLenum attr_type;
+
+        glGetActiveAttrib(deferred_lighting_pass_program.handle, i,
+            ARRAY_COUNT(attr_name),
+            &attr_len,
+            &attr_size,
+            &attr_type,
+            attr_name);
+
+        GLint attr_location = glGetAttribLocation(deferred_lighting_pass_program.handle, attr_name);
+
+        deferred_lighting_pass_program.vertex_input_layout.attributes.push_back({ (unsigned char)attr_location, get_attric_component_count(attr_type) });
+    }
+
+    deferred_lighting_program_uGPosition = glGetUniformLocation(deferred_lighting_pass_program.handle, "uGPosition");
+    deferred_lighting_program_uGNormals = glGetUniformLocation(deferred_lighting_pass_program.handle, "uGNormals");
+    deferred_lighting_program_uGDiffuse = glGetUniformLocation(deferred_lighting_pass_program.handle, "uGDiffuse");
+
+    // [Framebuffers]
+
+    // [Framebuffer] GBuffer
+    // [Texture] Positions
+    glGenTextures(1, &position_attachment_handle);
+    glBindTexture(GL_TEXTURE_2D, position_attachment_handle);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, display_size.x, display_size.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    // [Texture] Normals
+    glGenTextures(1, &normals_attachment_handle);
+    glBindTexture(GL_TEXTURE_2D, normals_attachment_handle);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, display_size.x, display_size.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    // [Texture] Diffuse
+    glGenTextures(1, &diffuse_attachment_handle);
+    glBindTexture(GL_TEXTURE_2D, diffuse_attachment_handle);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, display_size.x, display_size.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    // [Texture] Depth
+    glGenTextures(1, &depth_attachment_handle);
+    glBindTexture(GL_TEXTURE_2D, depth_attachment_handle);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, display_size.x, display_size.y, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    glGenFramebuffers(1, &framebuffer_geometry);
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_geometry);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, position_attachment_handle, 0);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, normals_attachment_handle, 0);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, diffuse_attachment_handle, 0);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depth_attachment_handle, 0);
+
+    GLenum drawBuffersGBuffer[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
+    glDrawBuffers(ARRAY_COUNT(drawBuffersGBuffer), drawBuffersGBuffer);
+
+    GLenum frameBufferStatusGBuffer = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    if (frameBufferStatusGBuffer != GL_FRAMEBUFFER_COMPLETE)
+    {
+        switch (frameBufferStatusGBuffer)
+        {
+        case GL_FRAMEBUFFER_UNDEFINED:                          LOG("Framebuffer status error: GL_FRAMEBUFFER_UNDEFINED"); break;
+        case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:              LOG("Framebuffer status error: GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT"); break;
+        case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:      LOG("Framebuffer status error: GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT"); break;
+        case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER:             LOG("Framebuffer status error: GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER"); break;
+        case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER:             LOG("Framebuffer status error: GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER"); break;
+        case GL_FRAMEBUFFER_UNSUPPORTED:                        LOG("Framebuffer status error: GL_FRAMEBUFFER_UNSUPPORTED"); break;
+        case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE:             LOG("Framebuffer status error: GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE"); break;
+        case GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS:           LOG("Framebuffer status error: GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS"); break;
+
+        default: LOG("Unknown framebuffer status error"); break;
+        }
+    }
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    // [Framebuffer] FBuffer
+    glGenTextures(1, &final_render_attachment_handle);
+    glBindTexture(GL_TEXTURE_2D, final_render_attachment_handle);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, display_size.x, display_size.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    glGenFramebuffers(1, &framebuffer_final);
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_final);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, final_render_attachment_handle, 0);
+
+    GLenum drawBuffersFBuffer[] = { GL_COLOR_ATTACHMENT3 };
+    glDrawBuffers(ARRAY_COUNT(drawBuffersFBuffer), drawBuffersFBuffer);
+
+    GLenum frameBufferStatusFBuffer = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    if (frameBufferStatusFBuffer != GL_FRAMEBUFFER_COMPLETE)
+    {
+        switch (frameBufferStatusFBuffer)
+        {
+        case GL_FRAMEBUFFER_UNDEFINED:                          LOG("Framebuffer status error: GL_FRAMEBUFFER_UNDEFINED"); break;
+        case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:              LOG("Framebuffer status error: GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT"); break;
+        case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:      LOG("Framebuffer status error: GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT"); break;
+        case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER:             LOG("Framebuffer status error: GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER"); break;
+        case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER:             LOG("Framebuffer status error: GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER"); break;
+        case GL_FRAMEBUFFER_UNSUPPORTED:                        LOG("Framebuffer status error: GL_FRAMEBUFFER_UNSUPPORTED"); break;
+        case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE:             LOG("Framebuffer status error: GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE"); break;
+        case GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS:           LOG("Framebuffer status error: GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS"); break;
+
+        default: LOG("Unknown framebuffer status error"); break;
+        }
+    }
 
 	return true;
 }
@@ -232,58 +402,196 @@ void on_glfw_close_window(GLFWwindow* _window)
 
 // Buffer Management
 
-bool IsPowerOf2(unsigned int value)
+bool is_power_of_2(unsigned int _value)
 {
-	return value && !(value & (value - 1));
+	return _value && !(_value & (_value - 1));
 }
 
-unsigned int Align(unsigned int value, unsigned int alignment)
+unsigned int align(unsigned int _value, unsigned int _alignment)
 {
-	return (value + alignment - 1) & ~(alignment - 1);
+	return (_value + _alignment - 1) & ~(_alignment - 1);
 }
 
-Buffer CreateBuffer(unsigned int size, GLenum type, GLenum usage)
+Buffer create_buffer(unsigned int _size, GLenum _type, GLenum _usage)
 {
 	Buffer buffer = {};
-	buffer.size = size;
-	buffer.type = type;
+	buffer.size = _size;
+	buffer.type = _type;
 
 	glGenBuffers(1, &buffer.handle);
-	glBindBuffer(type, buffer.handle);
-	glBufferData(type, buffer.size, NULL, usage);
-	glBindBuffer(type, 0);
+	glBindBuffer(_type, buffer.handle);
+	glBufferData(_type, buffer.size, NULL, _usage);
+	glBindBuffer(_type, 0);
 
 	return buffer;
 }
 
-void BindBuffer(const Buffer& buffer)
+void bind_buffer(const Buffer& _buffer)
 {
-	glBindBuffer(buffer.type, buffer.handle);
+	glBindBuffer(_buffer.type, _buffer.handle);
 }
 
-void MapBuffer(Buffer& buffer, GLenum access)
+void map_buffer(Buffer& _buffer, GLenum _access)
 {
-	glBindBuffer(buffer.type, buffer.handle);
-	buffer.data = (unsigned char*)glMapBuffer(buffer.type, access);
-	buffer.head = 0;
+	glBindBuffer(_buffer.type, _buffer.handle);
+    _buffer.data = (unsigned char*)glMapBuffer(_buffer.type, _access);
+    _buffer.head = 0;
 }
 
-void UnmapBuffer(Buffer& buffer)
+void unmap_buffer(Buffer& _buffer)
 {
-	glUnmapBuffer(buffer.type);
-	glBindBuffer(buffer.type, 0);
+	glUnmapBuffer(_buffer.type);
+	glBindBuffer(_buffer.type, 0);
 }
 
-void AlignHead(Buffer& buffer, unsigned int alignment)
+void align_head(Buffer& _buffer, unsigned int _alignment)
 {
-	ASSERT(IsPowerOf2(alignment), "The alignment must be a power of 2");
-	buffer.head = Align(buffer.head, alignment);
+	ASSERT(is_power_of_2(_alignment), "The alignment must be a power of 2");
+    _buffer.head = align(_buffer.head, _alignment);
 }
 
-void PushAlignedData(Buffer& buffer, const void* data, unsigned int size, unsigned int alignment)
+void push_aligned_data(Buffer& _buffer, const void* _data, unsigned int _size, unsigned int _alignment)
 {
-	ASSERT(buffer.data != NULL, "The buffer must be mapped first");
-	AlignHead(buffer, alignment);
-	memcpy((unsigned char*)buffer.data + buffer.head, data, size);
-	buffer.head += size;
+	ASSERT(_buffer.data != NULL, "The buffer must be mapped first");
+	align_head(_buffer, _alignment);
+	memcpy((unsigned char*)_buffer.data + _buffer.head, _data, _size);
+    _buffer.head += _size;
+}
+
+// Shader loader
+
+GLuint create_shader_program_from_source(std::string& _program_src, const char* _shader_name)
+{
+    GLchar  info_log_buffer[1024] = {};
+    GLsizei info_log_buffer_size = sizeof(info_log_buffer);
+    GLsizei info_log_size;
+    GLint   success;
+
+    char version_string[] = "#version 430\n";
+    char shader_name_define[128];
+    sprintf(shader_name_define, "#define %s\n", _shader_name);
+    char vertex_shader_define[] = "#define VERTEX\n";
+    char fragment_shader_define[] = "#define FRAGMENT\n";
+
+    const GLchar* vertex_shader_source[] = {
+        version_string,
+        shader_name_define,
+        vertex_shader_define,
+        _program_src.c_str()
+    };
+    const GLint vertex_shader_lengths[] = {
+        (GLint)strlen(version_string),
+        (GLint)strlen(shader_name_define),
+        (GLint)strlen(vertex_shader_define),
+        (GLint)_program_src.length()
+    };
+    const GLchar* fragment_shader_source[] = {
+        version_string,
+        shader_name_define,
+        fragment_shader_define,
+        _program_src.c_str()
+    };
+    const GLint fragment_shader_lengths[] = {
+        (GLint)strlen(version_string),
+        (GLint)strlen(shader_name_define),
+        (GLint)strlen(fragment_shader_define),
+        (GLint)_program_src.length()
+    };
+
+    GLuint vshader = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vshader, ARRAY_COUNT(vertex_shader_source), vertex_shader_source, vertex_shader_lengths);
+    glCompileShader(vshader);
+    glGetShaderiv(vshader, GL_COMPILE_STATUS, &success);
+    if (!success)
+    {
+        glGetShaderInfoLog(vshader, info_log_buffer_size, &info_log_size, info_log_buffer);
+        LOG("glCompileShader() function failed with vertex shader %s\nReported message:\n%s\n", _shader_name, info_log_buffer);
+    }
+
+    GLuint fshader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fshader, ARRAY_COUNT(fragment_shader_source), fragment_shader_source, fragment_shader_lengths);
+    glCompileShader(fshader);
+    glGetShaderiv(fshader, GL_COMPILE_STATUS, &success);
+    if (!success)
+    {
+        glGetShaderInfoLog(fshader, info_log_buffer_size, &info_log_size, info_log_buffer);
+        LOG("glCompileShader() function failed with fragment shader %s\nReported message:\n%s\n", _shader_name, info_log_buffer);
+    }
+
+    GLuint program_handle = glCreateProgram();
+    glAttachShader(program_handle, vshader);
+    glAttachShader(program_handle, fshader);
+    glLinkProgram(program_handle);
+    glGetProgramiv(program_handle, GL_LINK_STATUS, &success);
+    if (!success)
+    {
+        glGetProgramInfoLog(program_handle, info_log_buffer_size, &info_log_size, info_log_buffer);
+        LOG("glLinkProgram() failed with program %s\nReported message:\n%s\n", _shader_name, info_log_buffer);
+    }
+
+    glUseProgram(0);
+
+    glDetachShader(program_handle, vshader);
+    glDetachShader(program_handle, fshader);
+    glDeleteShader(vshader);
+    glDeleteShader(fshader);
+
+    return program_handle;
+}
+
+unsigned char get_attric_component_count(const GLenum& _type)
+{
+    switch (_type)
+    {
+    case GL_FLOAT: return 1; break;
+    case GL_FLOAT_VEC2: return 2; break;
+    case GL_FLOAT_VEC3: return 3; break;
+    case GL_FLOAT_VEC4: return 4; break;
+    case GL_FLOAT_MAT2: return 4; break;
+    case GL_FLOAT_MAT3: return 9; break;
+    case GL_FLOAT_MAT4: return 16; break;
+    case GL_FLOAT_MAT2x3: return 6; break;
+    case GL_FLOAT_MAT2x4: return 8; break;
+    case GL_FLOAT_MAT3x2: return 6; break;
+    case GL_FLOAT_MAT3x4: return 12; break;
+    case GL_FLOAT_MAT4x2: return 8; break;
+    case GL_FLOAT_MAT4x3: return 12; break;
+    case GL_INT: return 1; break;
+    case GL_INT_VEC2: return 2; break;
+    case GL_INT_VEC3: return 3; break;
+    case GL_INT_VEC4: return 4; break;
+    case GL_UNSIGNED_INT: return 1; break;
+    case GL_UNSIGNED_INT_VEC2: return 2; break;
+    case GL_UNSIGNED_INT_VEC3: return 3; break;
+    case GL_UNSIGNED_INT_VEC4: return 4; break;
+    case GL_DOUBLE: return 1; break;
+    case GL_DOUBLE_VEC2: return 2; break;
+    case GL_DOUBLE_VEC3: return 3; break;
+    case GL_DOUBLE_VEC4: return 4; break;
+    case GL_DOUBLE_MAT2: return 4; break;
+    case GL_DOUBLE_MAT3: return 9; break;
+    case GL_DOUBLE_MAT4: return 16;
+    case GL_DOUBLE_MAT2x3: return 6; break;
+    case GL_DOUBLE_MAT2x4: return 8; break;
+    case GL_DOUBLE_MAT3x2: return 6; break;
+    case GL_DOUBLE_MAT3x4: return 12; break;
+    case GL_DOUBLE_MAT4x2: return 8; break;
+    case GL_DOUBLE_MAT4x3: return 12; break;
+    default: return 0; break;
+    }
+
+    // leave this return 0 as a default return outisde the switch, just in case
+    return 0;
+}
+
+unsigned int RenderModule::load_shader_program(const char* _file_path, const char* _program_name)
+{
+    std::string program_source = read_text_file(_file_path);
+
+    ShaderProgram program = {};
+    program.file_path = _file_path;
+    program.name = _program_name;
+    program.handle = create_shader_program_from_source(program_source, _program_name);
+    shader_programs.push_back(program);
+    return shader_programs.size() - 1;
 }
