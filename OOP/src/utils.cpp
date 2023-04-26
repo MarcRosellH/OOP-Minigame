@@ -1,5 +1,6 @@
 #pragma once
 
+#include "memleak.h"
 #include "utils.h"
 
 void log(const char _file[], int _line, const char* _format, ...)
@@ -27,10 +28,11 @@ std::string read_text_file(const char* _file_path)
 		fseek(file, 0, SEEK_END);
 		unsigned int length = ftell(file);
 		fseek(file, 0, SEEK_SET);
-		char* content = new char[length];
+		char* content = DBG_NEW char[length];
 		fread(content, sizeof(char), length, file);
 		ret = content;
 		fclose(file);
+		RELEASE_ARRAY(content);
 	}
 	else
 	{

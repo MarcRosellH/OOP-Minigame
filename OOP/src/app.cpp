@@ -12,8 +12,8 @@
 
 App::App() : quit(false)
 {
-	input = new InputModule(this);
-	renderer = new RenderModule(this);
+	input = DBG_NEW InputModule(this);
+	renderer = DBG_NEW RenderModule(this);
 
 	module_add(input);
 
