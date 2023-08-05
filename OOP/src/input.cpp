@@ -27,10 +27,6 @@ Update_State InputModule::pre_update()
 
 Update_State InputModule::post_update()
 {
-	if (mouse_buttons[LEFT] != BUTTON_IDLE)
-	{
-		LOG("Letter A state is now: %d", (int)mouse_buttons[LEFT]);
-	}
 
 	for (size_t i = 0; i < MOUSE_BUTTON_COUNT; ++i)
 	{

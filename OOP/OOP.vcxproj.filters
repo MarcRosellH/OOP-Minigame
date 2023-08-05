@@ -31,6 +31,12 @@
     <Filter Include="Shaders">
       <UniqueIdentifier>{d5db6e7c-af86-4728-ae91-4f35ed640c2b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\OCS">
+      <UniqueIdentifier>{7f9312b9-4891-4de9-a3f9-ff51484f5d95}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\OCS\Components">
+      <UniqueIdentifier>{d49faa1f-9221-48c3-b453-04f086f649d4}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">
@@ -76,6 +82,18 @@
     </ClInclude>
     <ClInclude Include="externals\glad\include\glad\khrplatform.h">
       <Filter>Glad</Filter>
+    </ClInclude>
+    <ClInclude Include="src\object.h">
+      <Filter>Header Files\OCS</Filter>
+    </ClInclude>
+    <ClInclude Include="src\component.h">
+      <Filter>Header Files\OCS</Filter>
+    </ClInclude>
+    <ClInclude Include="src\mesh_render.h">
+      <Filter>Header Files\OCS\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="src\transform.h">
+      <Filter>Header Files\OCS\Components</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -147,10 +147,14 @@
     <ClInclude Include="externals\glad\include\glad\glad.h" />
     <ClInclude Include="externals\glad\include\glad\khrplatform.h" />
     <ClInclude Include="src\app.h" />
+    <ClInclude Include="src\component.h" />
     <ClInclude Include="src\input.h" />
     <ClInclude Include="src\memleak.h" />
+    <ClInclude Include="src\mesh_render.h" />
     <ClInclude Include="src\module.h" />
+    <ClInclude Include="src\object.h" />
     <ClInclude Include="src\render.h" />
+    <ClInclude Include="src\transform.h" />
     <ClInclude Include="src\utils.h" />
   </ItemGroup>
   <ItemGroup>
