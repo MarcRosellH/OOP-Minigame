@@ -1,3 +1,4 @@
+
 ///////////////////////////////////////////////////////////////////////
 #ifdef DEFERRED_GEOMETRY_PASS
 
@@ -53,7 +54,7 @@ void main()
 
 #endif
 #endif
-
+// This comment prevents a shader compilation error. Shader compiler was adding non-ASCII characters in this line, and couldn't process it
 ///////////////////////////////////////////////////////////////////////
 #ifdef DEFERRED_LIGHTING_PASS
 
@@ -64,7 +65,7 @@ layout(location = 1) in vec2 aTexCoord;
 
 struct Light
 {
-	unsigned int type;
+	uint type;
 	vec3 color;
 	vec3 direction;
 	float intensity;
@@ -75,7 +76,7 @@ struct Light
 layout(binding = 0, std140) uniform GlobalParams
 {
 	vec3 uCameraPosition;
-	unsigned int uLightCount;
+	uint uLightCount;
 	Light uLight[16];
 };
 
@@ -94,7 +95,7 @@ in vec2 vTexCoord;
 
 struct Light
 {
-	unsigned int type;
+	uint type;
 	vec3 color;
 	vec3 direction;
 	float intensity;
@@ -105,7 +106,7 @@ struct Light
 layout(binding = 0, std140) uniform GlobalParams
 {
 	vec3 uCameraPosition;
-	unsigned int uLightCount;
+	uint uLightCount;
 	Light uLight[16];
 };
 
@@ -191,6 +192,6 @@ void main()
 
 	oFinalRender = vec4(lighting * Diffuse, 1.0);
 }
-
 #endif
 #endif
+// This comment prevents a shader compilation error. Shader compiler was adding non-ASCII characters in this line, and couldn't process it

@@ -4,10 +4,16 @@
 
 #include "component.h"
 
-class MeshRenderComponent : Component
+class ComponentMeshRender : public Component
 {
 public:
 	// Public methods
+	ComponentMeshRender(Object* _parent);
+	virtual ~ComponentMeshRender();
+
+	void start() override;
+	void update() override;
+	void clean_up() override;
 
 private:
 	// Private methods

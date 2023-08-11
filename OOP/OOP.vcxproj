@@ -138,15 +138,20 @@
   <ItemGroup>
     <ClCompile Include="externals\glad\include\glad\glad.c" />
     <ClCompile Include="src\app.cpp" />
+    <ClCompile Include="src\camera.cpp" />
     <ClCompile Include="src\input.cpp" />
     <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\mesh_render.cpp" />
+    <ClCompile Include="src\object.cpp" />
     <ClCompile Include="src\render.cpp" />
+    <ClCompile Include="src\transform.cpp" />
     <ClCompile Include="src\utils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="externals\glad\include\glad\glad.h" />
     <ClInclude Include="externals\glad\include\glad\khrplatform.h" />
     <ClInclude Include="src\app.h" />
+    <ClInclude Include="src\camera.h" />
     <ClInclude Include="src\component.h" />
     <ClInclude Include="src\input.h" />
     <ClInclude Include="src\memleak.h" />

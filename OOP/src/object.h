@@ -5,17 +5,20 @@
 #include <vector>
 
 class Component;
+enum class COMPONENT_TYPE;
 
 class Object
 {
 public:
 	// Public methods
-	Object();
+	Object(bool _active);
 	~Object();
 
-	Component* add_component();
+	Component* add_component(COMPONENT_TYPE);
 
+	void start();
 	void update();
+	void clean_up();
 
 	void set_active(bool);
 

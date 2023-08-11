@@ -57,6 +57,18 @@
     <ClCompile Include="externals\glad\include\glad\glad.c">
       <Filter>Glad</Filter>
     </ClCompile>
+    <ClCompile Include="src\object.cpp">
+      <Filter>Header Files\OCS</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mesh_render.cpp">
+      <Filter>Header Files\OCS\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="src\transform.cpp">
+      <Filter>Header Files\OCS\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="src\camera.cpp">
+      <Filter>Header Files\OCS\Components</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\app.h">
@@ -93,6 +105,9 @@
       <Filter>Header Files\OCS\Components</Filter>
     </ClInclude>
     <ClInclude Include="src\transform.h">
+      <Filter>Header Files\OCS\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="src\camera.h">
       <Filter>Header Files\OCS\Components</Filter>
     </ClInclude>
   </ItemGroup>

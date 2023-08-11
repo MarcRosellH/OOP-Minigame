@@ -4,13 +4,23 @@
 
 class Object;
 
+enum class COMPONENT_TYPE
+{
+	COMPONENT_TRANSFORM,
+	COMPONENT_MESH_RENDER,
+	MAX
+};
+
 class Component
 {
 public:
 	// Public methods
-	Component(Object* _object);
-	virtual ~Component();
+	Component(Object* _object) : object(_object) {}
+	virtual ~Component() {}
 
+	virtual void start() {}
+	virtual void update() {}
+	virtual void clean_up() {}
 
 private:
 	// Private methods
