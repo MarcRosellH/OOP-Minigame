@@ -2,7 +2,11 @@
 #ifndef __MESH_RENDER_H__
 #define __MESH_RENDER_H__
 
+#include <string>
+
 #include "component.h"
+
+class Model;
 
 class ComponentMeshRender : public Component
 {
@@ -15,6 +19,8 @@ public:
 	void update() override;
 	void clean_up() override;
 
+	void request_model();
+
 private:
 	// Private methods
 
@@ -23,6 +29,8 @@ public:
 
 private:
 	// Private data
+	unsigned int model_index;
+	bool to_render;
 
 };
 

@@ -2,7 +2,7 @@
 #ifndef __TRANSFORM_H__
 #define __TRANSFORM_H__
 
-#include <glm/glm.hpp>
+#include <glm\glm.hpp>
 
 #include "component.h"
 
@@ -20,13 +20,15 @@ public:
 	void update() override;
 	void clean_up() override;
 
-	void set_position(glm::vec3&);
-	void set_rotation(glm::vec3&);
-	void set_scale(glm::vec3&);
+	void set_position(glm::vec3);
+	void set_rotation(glm::vec3);
+	void set_scale(glm::vec3);
 
 	const glm::vec3& get_position() const;
 	const glm::vec3& get_rotation() const;
 	const glm::vec3& get_scale() const;
+
+	glm::mat4 matrix_position_rotation_scale();
 
 
 private:

@@ -1,3 +1,7 @@
+#pragma once
+
+#include <glm/gtx/transform.hpp>
+
 #include "memleak.h"
 #include "utils.h"
 
@@ -32,17 +36,17 @@ void ComponentTransform::clean_up()
 {
 }
 
-void ComponentTransform::set_position(glm::vec3& _new_position)
+void ComponentTransform::set_position(glm::vec3 _new_position)
 {
 	position = _new_position;
 }
 
-void ComponentTransform::set_rotation(glm::vec3& _new_rotation)
+void ComponentTransform::set_rotation(glm::vec3 _new_rotation)
 {
 	rotation = _new_rotation;
 }
 
-void ComponentTransform::set_scale(glm::vec3& _new_scale)
+void ComponentTransform::set_scale(glm::vec3 _new_scale)
 {
 	scale = _new_scale;
 }
@@ -60,4 +64,14 @@ const glm::vec3& ComponentTransform::get_rotation() const
 const glm::vec3& ComponentTransform::get_scale() const
 {
 	return scale;
+}
+
+glm::mat4 ComponentTransform::matrix_position_rotation_scale()
+{
+	glm::mat4 ret = glm::translate(position);
+	glm::vec3 radiant_rotation = glm::radians(rotation);
+	ret = glm::rotate(ret, radiant_rotation.x, glm::vec3(1.F, 0.F, 0.F));
+	ret = glm::rotate(ret, radiant_rotation.y, glm::vec3(0.F, 1.F, 0.F));
+	ret = glm::rotate(ret, radiant_rotation.z, glm::vec3(0.F, 0.F, 1.F));
+	return glm::scale(ret, scale);
 }

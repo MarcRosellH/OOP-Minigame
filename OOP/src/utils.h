@@ -37,4 +37,11 @@ void log(const char _file[], int _line, const char* _format, ...);
 
 std::string read_text_file(const char* _file_path);
 
+std::string get_directory_part(std::string _path);
+
+std::string get_filepath_name(std::string _file_path);
+
+std::string make_path(std::string _dir, std::string _filename);
+
+
 #endif // !__UTILS_H__

@@ -2,12 +2,18 @@
 
 #include <Windows.h>
 #include <stdio.h>
+#include <glm/gtc/type_ptr.hpp>
+#include <glfw3.h>
 
 #include "app.h"
 #include "render.h"
 #include "memleak.h"
 
-#include <glfw3.h>
+#include "resource_manager.h"
+#include "resources.h"
+#include "scene.h"
+#include "camera.h"
+
 
 #define VC_EXTRALEAN
 #define WIN32_LEAN_AND_MEAN
@@ -18,9 +24,7 @@
 
 #include "utils.h"
 
-RenderModule::RenderModule(App* _app) : Module(_app), window(nullptr), display_size(glm::ivec2(0,0)), deferred_geometry_pass_program_index(NULL), deferred_geometry_program_uTexture(NULL),
-                                        deferred_lighting_pass_program_index(NULL), deferred_lighting_program_uGDiffuse(NULL), deferred_lighting_program_uGNormals(NULL),
-                                        deferred_lighting_program_uGPosition(NULL), depth_attachment_handle(NULL), diffuse_attachment_handle(NULL), final_render_attachment_handle(NULL),
+RenderModule::RenderModule(App* _app, ResourceManager* _resource, Scene* _scene_ref) : Module(_app), resource(_resource), scene_ref(_scene_ref), window(nullptr), display_size(glm::ivec2(0, 0)), depth_attachment_handle(NULL), diffuse_attachment_handle(NULL), final_render_attachment_handle(NULL),
                                         framebuffer_final(NULL), framebuffer_geometry(NULL), normals_attachment_handle(NULL), position_attachment_handle(NULL)
 {
 }
@@ -75,63 +79,10 @@ bool RenderModule::initialize()
 		glDebugMessageCallback(on_gl_error, app);
 	}
 
-    // [Deferred Render] Geometry Pass Program
-    deferred_geometry_pass_program_index = load_shader_program("shaders.glsl", "DEFERRED_GEOMETRY_PASS");
+    glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &max_uniform_buffer_size);
+    glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &uniform_block_alignment);
 
-    ShaderProgram& deferred_geo_pass_program = shader_programs[deferred_geometry_pass_program_index];
-    GLint deferred_geo_attribute_count;
-    glGetProgramiv(deferred_geo_pass_program.handle, GL_ACTIVE_ATTRIBUTES, &deferred_geo_attribute_count);
-
-    for (GLint i = 0; i < deferred_geo_attribute_count; ++i)
-    {
-        GLchar attr_name[32];
-        GLsizei attr_len;
-        GLint attr_size;
-        GLenum attr_type;
-
-        glGetActiveAttrib(deferred_geo_pass_program.handle, i,
-            ARRAY_COUNT(attr_name),
-            &attr_len,
-            &attr_size,
-            &attr_type,
-            attr_name);
-
-        GLint attr_location = glGetAttribLocation(deferred_geo_pass_program.handle, attr_name);
-
-        deferred_geo_pass_program.vertex_input_layout.attributes.push_back({ (unsigned char)attr_location, get_attric_component_count(attr_type) });
-    }
-
-    deferred_geometry_program_uTexture = glGetUniformLocation(deferred_geo_pass_program.handle, "uTexture");
-
-    // [Deferred Render] Lighting Pass Program
-    deferred_lighting_pass_program_index = load_shader_program("shaders.glsl", "DEFERRED_LIGHTING_PASS");
-
-    ShaderProgram& deferred_lighting_pass_program = shader_programs[deferred_lighting_pass_program_index];
-    GLint deferred_light_attribute_count;
-    glGetProgramiv(deferred_lighting_pass_program.handle, GL_ACTIVE_ATTRIBUTES, &deferred_light_attribute_count);
-
-    for (GLint i = 0; i < deferred_light_attribute_count; ++i)
-    {
-        GLchar attr_name[32];
-        GLsizei attr_len;
-        GLint attr_size;
-        GLenum attr_type;
-
-        glGetActiveAttrib(deferred_lighting_pass_program.handle, i,
-            ARRAY_COUNT(attr_name),
-            &attr_len,
-            &attr_size,
-            &attr_type,
-            attr_name);
-
-        GLint attr_location = glGetAttribLocation(deferred_lighting_pass_program.handle, attr_name);
-
-        deferred_lighting_pass_program.vertex_input_layout.attributes.push_back({ (unsigned char)attr_location, get_attric_component_count(attr_type) });
-    }
-
-    deferred_lighting_program_uGPosition = glGetUniformLocation(deferred_lighting_pass_program.handle, "uGPosition");
-    deferred_lighting_program_uGNormals = glGetUniformLocation(deferred_lighting_pass_program.handle, "uGNormals");
-    deferred_lighting_program_uGDiffuse = glGetUniformLocation(deferred_lighting_pass_program.handle, "uGDiffuse");
+    uniform_buffer = CreateConstantBuffer(max_uniform_buffer_size);
 
     // [Framebuffers]
 
@@ -251,13 +202,160 @@ bool RenderModule::initialize()
 
 Update_State RenderModule::pre_update()
 {
-	glClearColor(0.F, 1.F, 0.F, 1.F);
+	glClearColor(0.F, 0.F, 0.F, 1.F);
 	return UPDATE_CONTINUE;
 }
 
 Update_State RenderModule::post_update()
 {
-	glfwSwapBuffers(window);
+    std::vector<RenderPackage>* packages = resource->get_render_packs_vector();
+
+    scene_ref->camera_ref->set_aspect_ratio((float)display_size.x, (float)display_size.y);
+
+    glm::mat4 projection_matrix = scene_ref->camera_ref->get_projection_matrix();
+    glm::mat4 view_matrix = scene_ref->camera_ref->get_view_matrix();
+
+    bind_buffer(uniform_buffer);
+    uniform_buffer.data = (unsigned char*)glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
+    uniform_buffer.head = 0;
+
+    global_params_offset = uniform_buffer.head;
+
+    PushVec3(uniform_buffer, scene_ref->camera_ref->position);  // TODO: continue here
+    PushUInt(uniform_buffer, lights.size());
+
+    for (unsigned int i = 0; i < lights.size(); ++i)
+    {
+        align_head(uniform_buffer, sizeof(glm::vec4));
+
+        Light& light = lights[i];
+        PushUInt(uniform_buffer, light.type);
+        PushVec3(uniform_buffer, light.color);
+        PushVec3(uniform_buffer, light.direction);
+        PushFloat(uniform_buffer, light.intensity);
+        PushVec3(uniform_buffer, light.position);
+        PushFloat(uniform_buffer, light.radius);
+    }
+
+    global_params_size = uniform_buffer.head - global_params_offset;
+
+    for (unsigned int i = 0; i < (*packages).size(); ++i)
+    {
+        align_head(uniform_buffer, uniform_block_alignment);
+
+        RenderPackage& ref = (*packages)[i];
+
+        glm::mat4 world_view_projection_matrix = projection_matrix * view_matrix * ref.position_rotation_scale_matrix;
+
+        ref.local_params_offset = uniform_buffer.head;
+        
+        PushMat4(uniform_buffer, ref.position_rotation_scale_matrix);
+        PushMat4(uniform_buffer, world_view_projection_matrix);
+
+        ref.local_params_size = uniform_buffer.head - ref.local_params_offset;
+    }
+
+    // Unmap buffer
+    glUnmapBuffer(GL_UNIFORM_BUFFER);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+    /* First pass (geometry) */
+
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_geometry);
+
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    GLenum drawBuffersGBuffer[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
+    glDrawBuffers(ARRAY_COUNT(drawBuffersGBuffer), drawBuffersGBuffer);
+
+    glViewport(0, 0, display_size.x, display_size.y);
+
+    glEnable(GL_DEPTH_TEST);
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    glDepthMask(GL_TRUE);
+
+    ShaderProgram& deferredGeometryPassProgram = resource->get_shader_program(resource->get_geometry_shader_index());
+    glUseProgram(deferredGeometryPassProgram.handle);
+
+
+    for (const RenderPackage& entity : *packages)
+    {
+        Model& model = resource->models[entity.model_index];
+        Mesh& mesh = resource->meshes[model.mesh_index];
+
+        glBindBufferRange(GL_UNIFORM_BUFFER, BINDING(1), uniform_buffer.handle, entity.local_params_offset, entity.local_params_size);
+
+        for (unsigned int i = 0; i < mesh.submeshes.size(); ++i)
+        {
+            GLuint vao = find_vao(mesh, i, deferredGeometryPassProgram);
+            glBindVertexArray(vao);
+
+            unsigned int submesh_material_index = model.material_index[i];
+            Material& submesh_material = resource->materials[submesh_material_index];
+
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, resource->textures[submesh_material.albedo_texture_index].handle);
+            glUniform1i(resource->deferred_geometry_program_uTexture, 0);
+
+            Submesh& submesh = mesh.submeshes[i];
+            glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(unsigned long long)submesh.index_offset);
+
+            glBindVertexArray(0);
+        }
+    }
+
+    glUseProgram(0);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    /* Second pass (lighting) */
+
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_final);
+
+    glClearColor(0.f, 0.f, 0.f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    GLenum drawBuffersFBuffer[] = { GL_COLOR_ATTACHMENT3 };
+    glDrawBuffers(ARRAY_COUNT(drawBuffersFBuffer), drawBuffersFBuffer);
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_ONE, GL_ONE);
+
+    //glDepthMask(GL_FALSE);
+
+    ShaderProgram& deferredLightingPassProgram = resource->get_shader_program(resource->get_lighting_shader_index());
+    glUseProgram(deferredLightingPassProgram.handle);
+
+    glUniform1i(resource->deferred_lighting_program_uGPosition, 1);
+    glUniform1i(resource->deferred_lighting_program_uGNormals, 2);
+    glUniform1i(resource->deferred_lighting_program_uGDiffuse, 3);
+
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, position_attachment_handle);
+
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, normals_attachment_handle);
+
+    glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_2D, diffuse_attachment_handle);
+
+    glBindBufferRange(GL_UNIFORM_BUFFER, BINDING(0), uniform_buffer.handle, global_params_offset, global_params_size);
+
+    render_quad();
+
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, framebuffer_geometry);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, framebuffer_final);
+
+    glBlitFramebuffer(0, 0, display_size.x, display_size.y, 0, 0, display_size.x, display_size.y, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+
+    glUseProgram(0);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    (*packages).clear();
+
 	return UPDATE_CONTINUE;
 }
 
@@ -272,6 +370,105 @@ bool RenderModule::clean_up()
 void RenderModule::set_display_size(const int _new_width, const int _new_height)
 {
 	display_size = glm::ivec2(_new_width, _new_height);
+}
+
+GLuint RenderModule::find_vao(Mesh& _mesh, unsigned int _submesh_index, const ShaderProgram& _program)
+{
+    Submesh& submesh = _mesh.submeshes[_submesh_index];
+
+    for (unsigned int i = 0; i < (unsigned int)submesh.vaos.size(); ++i)
+    {
+        if (submesh.vaos[i].program_handle == _program.handle)
+            return submesh.vaos[i].handle;
+    }
+
+    GLuint vao_handle = 0;
+
+    glGenVertexArrays(1, &vao_handle);
+    glBindVertexArray(vao_handle);
+
+    glBindBuffer(GL_ARRAY_BUFFER, _mesh.vertex_buffer_handle);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _mesh.index_buffer_handle);
+
+    for (unsigned int i = 0; i < _program.vertex_input_layout.attributes.size(); ++i)
+    {
+        bool attributeWasLinked = false;
+
+        for (unsigned int j = 0; j < submesh.vertex_buffer_layout.attributes.size(); ++j)
+        {
+            if (_program.vertex_input_layout.attributes[i].location == submesh.vertex_buffer_layout.attributes[j].location)
+            {
+                const unsigned int index = submesh.vertex_buffer_layout.attributes[j].location;
+                const unsigned int ncomp = submesh.vertex_buffer_layout.attributes[j].component_count;
+                const unsigned int offset = submesh.vertex_buffer_layout.attributes[j].offset + submesh.vertex_offset;
+                const unsigned int stride = submesh.vertex_buffer_layout.stride;
+
+                glVertexAttribPointer(index, ncomp, GL_FLOAT, GL_FALSE, stride, (void*)(unsigned long long)offset);
+                glEnableVertexAttribArray(index);
+
+                attributeWasLinked = true;
+                break;
+            }
+        }
+    }
+
+    glBindVertexArray(0);
+
+    Vao vao = { vao_handle, _program.handle };
+    submesh.vaos.push_back(vao);
+
+    return vao_handle;
+}
+
+void RenderModule::render_quad()
+{
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    glViewport(0, 0, display_size.x, display_size.y);
+
+    ShaderProgram& quadProgram = resource->get_shader_program(resource->get_textured_shader_index());
+
+    glUseProgram(quadProgram.handle);
+    glBindVertexArray(quad.vao);
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    glUniform1i(resource->textured_program_uTexture, 0);
+    glActiveTexture(GL_TEXTURE0);
+
+    glBindTexture(GL_TEXTURE_2D, final_render_attachment_handle);
+
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
+
+    glBindVertexArray(0);
+    glUseProgram(0);
+}
+
+void RenderModule::generate_quad()
+{
+    glGenBuffers(1, &quad.embedded_vertices);
+    glBindBuffer(GL_ARRAY_BUFFER, quad.embedded_vertices);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(quad.vertices), quad.vertices, GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    glGenBuffers(1, &quad.embedded_elements);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, quad.embedded_elements);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(quad.indices), quad.indices, GL_STATIC_DRAW);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+    glGenVertexArrays(1, &quad.vao);
+    glBindVertexArray(quad.vao);
+    glBindBuffer(GL_ARRAY_BUFFER, quad.embedded_vertices);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(VertexV3V2), (void*)0);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(VertexV3V2), (void*)12);
+    glEnableVertexAttribArray(1);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, quad.embedded_elements);
+    glBindVertexArray(0);
 }
 
 // OpenGL callbacks
@@ -401,200 +598,4 @@ void on_glfw_close_window(GLFWwindow* _window)
 {
 	App* app = (App*)glfwGetWindowUserPointer(_window);
 	app->quit_app();
-}
-
-// Buffer Management
-
-bool is_power_of_2(unsigned int _value)
-{
-	return _value && !(_value & (_value - 1));
-}
-
-unsigned int align(unsigned int _value, unsigned int _alignment)
-{
-	return (_value + _alignment - 1) & ~(_alignment - 1);
-}
-
-Buffer create_buffer(unsigned int _size, GLenum _type, GLenum _usage)
-{
-	Buffer buffer = {};
-	buffer.size = _size;
-	buffer.type = _type;
-
-	glGenBuffers(1, &buffer.handle);
-	glBindBuffer(_type, buffer.handle);
-	glBufferData(_type, buffer.size, NULL, _usage);
-	glBindBuffer(_type, 0);
-
-	return buffer;
-}
-
-void bind_buffer(const Buffer& _buffer)
-{
-	glBindBuffer(_buffer.type, _buffer.handle);
-}
-
-void map_buffer(Buffer& _buffer, GLenum _access)
-{
-	glBindBuffer(_buffer.type, _buffer.handle);
-    _buffer.data = (unsigned char*)glMapBuffer(_buffer.type, _access);
-    _buffer.head = 0;
-}
-
-void unmap_buffer(Buffer& _buffer)
-{
-	glUnmapBuffer(_buffer.type);
-	glBindBuffer(_buffer.type, 0);
-}
-
-void align_head(Buffer& _buffer, unsigned int _alignment)
-{
-	ASSERT(is_power_of_2(_alignment), "The alignment must be a power of 2");
-    _buffer.head = align(_buffer.head, _alignment);
-}
-
-void push_aligned_data(Buffer& _buffer, const void* _data, unsigned int _size, unsigned int _alignment)
-{
-	ASSERT(_buffer.data != NULL, "The buffer must be mapped first");
-	align_head(_buffer, _alignment);
-	memcpy((unsigned char*)_buffer.data + _buffer.head, _data, _size);
-    _buffer.head += _size;
-}
-
-// Shader loader
-
-GLuint create_shader_program_from_source(std::string& _program_src, const char* _shader_name)
-{
-    GLchar  info_log_buffer[1024] = {};
-    GLsizei info_log_buffer_size = sizeof(info_log_buffer);
-    GLsizei info_log_size;
-    GLint   success;
-
-    char version_string[] = "#version 430\n";
-    char shader_name_define[128];
-    sprintf(shader_name_define, "#define %s\n", _shader_name);
-    char vertex_shader_define[] = "#define VERTEX\n";
-    char fragment_shader_define[] = "#define FRAGMENT\n";
-
-    const GLchar* vertex_shader_source[] = {
-        version_string,
-        shader_name_define,
-        vertex_shader_define,
-        _program_src.c_str()
-    };
-    const GLint vertex_shader_lengths[] = {
-        (GLint)strlen(version_string),
-        (GLint)strlen(shader_name_define),
-        (GLint)strlen(vertex_shader_define),
-        (GLint)_program_src.length()
-    };
-    const GLchar* fragment_shader_source[] = {
-        version_string,
-        shader_name_define,
-        fragment_shader_define,
-        _program_src.c_str()
-    };
-    const GLint fragment_shader_lengths[] = {
-        (GLint)strlen(version_string),
-        (GLint)strlen(shader_name_define),
-        (GLint)strlen(fragment_shader_define),
-        (GLint)_program_src.length()
-    };
-
-    GLuint vshader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vshader, ARRAY_COUNT(vertex_shader_source), vertex_shader_source, vertex_shader_lengths);
-    glCompileShader(vshader);
-    glGetShaderiv(vshader, GL_COMPILE_STATUS, &success);
-    if (!success)
-    {
-        glGetShaderInfoLog(vshader, info_log_buffer_size, &info_log_size, info_log_buffer);
-        LOG("glCompileShader() function failed with vertex shader %s\nReported message:\n%s\n", _shader_name, info_log_buffer);
-    }
-
-    GLuint fshader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fshader, ARRAY_COUNT(fragment_shader_source), fragment_shader_source, fragment_shader_lengths);
-    glCompileShader(fshader);
-    glGetShaderiv(fshader, GL_COMPILE_STATUS, &success);
-    if (!success)
-    {
-        glGetShaderInfoLog(fshader, info_log_buffer_size, &info_log_size, info_log_buffer);
-        LOG("glCompileShader() function failed with fragment shader %s\nReported message:\n%s\n", _shader_name, info_log_buffer);
-    }
-
-    GLuint program_handle = glCreateProgram();
-    glAttachShader(program_handle, vshader);
-    glAttachShader(program_handle, fshader);
-    glLinkProgram(program_handle);
-    glGetProgramiv(program_handle, GL_LINK_STATUS, &success);
-    if (!success)
-    {
-        glGetProgramInfoLog(program_handle, info_log_buffer_size, &info_log_size, info_log_buffer);
-        LOG("glLinkProgram() failed with program %s\nReported message:\n%s\n", _shader_name, info_log_buffer);
-    }
-
-    glUseProgram(0);
-
-    glDetachShader(program_handle, vshader);
-    glDetachShader(program_handle, fshader);
-    glDeleteShader(vshader);
-    glDeleteShader(fshader);
-
-    return program_handle;
-}
-
-unsigned char get_attric_component_count(const GLenum& _type)
-{
-    switch (_type)
-    {
-    case GL_FLOAT: return 1; break;
-    case GL_FLOAT_VEC2: return 2; break;
-    case GL_FLOAT_VEC3: return 3; break;
-    case GL_FLOAT_VEC4: return 4; break;
-    case GL_FLOAT_MAT2: return 4; break;
-    case GL_FLOAT_MAT3: return 9; break;
-    case GL_FLOAT_MAT4: return 16; break;
-    case GL_FLOAT_MAT2x3: return 6; break;
-    case GL_FLOAT_MAT2x4: return 8; break;
-    case GL_FLOAT_MAT3x2: return 6; break;
-    case GL_FLOAT_MAT3x4: return 12; break;
-    case GL_FLOAT_MAT4x2: return 8; break;
-    case GL_FLOAT_MAT4x3: return 12; break;
-    case GL_INT: return 1; break;
-    case GL_INT_VEC2: return 2; break;
-    case GL_INT_VEC3: return 3; break;
-    case GL_INT_VEC4: return 4; break;
-    case GL_UNSIGNED_INT: return 1; break;
-    case GL_UNSIGNED_INT_VEC2: return 2; break;
-    case GL_UNSIGNED_INT_VEC3: return 3; break;
-    case GL_UNSIGNED_INT_VEC4: return 4; break;
-    case GL_DOUBLE: return 1; break;
-    case GL_DOUBLE_VEC2: return 2; break;
-    case GL_DOUBLE_VEC3: return 3; break;
-    case GL_DOUBLE_VEC4: return 4; break;
-    case GL_DOUBLE_MAT2: return 4; break;
-    case GL_DOUBLE_MAT3: return 9; break;
-    case GL_DOUBLE_MAT4: return 16;
-    case GL_DOUBLE_MAT2x3: return 6; break;
-    case GL_DOUBLE_MAT2x4: return 8; break;
-    case GL_DOUBLE_MAT3x2: return 6; break;
-    case GL_DOUBLE_MAT3x4: return 12; break;
-    case GL_DOUBLE_MAT4x2: return 8; break;
-    case GL_DOUBLE_MAT4x3: return 12; break;
-    default: return 0; break;
-    }
-
-    // leave this return 0 as a default return outisde the switch, just in case
-    return 0;
-}
-
-unsigned int RenderModule::load_shader_program(const char* _file_path, const char* _program_name)
-{
-    std::string program_source = read_text_file(_file_path);
-
-    ShaderProgram program = {};
-    program.file_path = _file_path;
-    program.name = _program_name;
-    program.handle = create_shader_program_from_source(program_source, _program_name);
-    shader_programs.push_back(program);
-    return shader_programs.size() - 1;
 }

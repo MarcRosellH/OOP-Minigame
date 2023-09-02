@@ -8,6 +8,7 @@ enum class COMPONENT_TYPE
 {
 	COMPONENT_TRANSFORM,
 	COMPONENT_MESH_RENDER,
+	COMPONENT_CAMERA,
 	MAX
 };
 
@@ -27,10 +28,10 @@ private:
 
 public:
 	// Public data
+	Object* object;
 
 private:
 	// Private data
-	Object* object;
 };
 
 #endif // !__COMPONENT_H__

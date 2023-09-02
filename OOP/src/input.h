@@ -2,7 +2,7 @@
 #ifndef __INPUT_H__
 #define __INPUT_H__
 
-#include <glm/glm.hpp>
+#include <glm\glm.hpp>
 
 class App;
 

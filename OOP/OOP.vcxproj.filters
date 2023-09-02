@@ -37,6 +37,18 @@
     <Filter Include="Header Files\OCS\Components">
       <UniqueIdentifier>{d49faa1f-9221-48c3-b453-04f086f649d4}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\OCS">
+      <UniqueIdentifier>{a74ceb53-fad9-427c-9445-cddd4fd6f105}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\OCS\Components">
+      <UniqueIdentifier>{ba4f86ec-6c33-4ad8-9fd6-a77150bcc998}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\stb">
+      <UniqueIdentifier>{53f07fe3-186e-4d76-8e56-42dbcb1807ae}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\stb">
+      <UniqueIdentifier>{d792e4d5-6cd7-4fab-81e0-bdc184de1aa8}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">
@@ -57,17 +69,29 @@
     <ClCompile Include="externals\glad\include\glad\glad.c">
       <Filter>Glad</Filter>
     </ClCompile>
-    <ClCompile Include="src\object.cpp">
-      <Filter>Header Files\OCS</Filter>
+    <ClCompile Include="src\camera.cpp">
+      <Filter>Source Files\OCS\Components</Filter>
     </ClCompile>
     <ClCompile Include="src\mesh_render.cpp">
-      <Filter>Header Files\OCS\Components</Filter>
+      <Filter>Source Files\OCS\Components</Filter>
     </ClCompile>
     <ClCompile Include="src\transform.cpp">
-      <Filter>Header Files\OCS\Components</Filter>
+      <Filter>Source Files\OCS\Components</Filter>
     </ClCompile>
-    <ClCompile Include="src\camera.cpp">
-      <Filter>Header Files\OCS\Components</Filter>
+    <ClCompile Include="src\object.cpp">
+      <Filter>Source Files\OCS</Filter>
+    </ClCompile>
+    <ClCompile Include="src\scene.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\resource_manager.cpp">
+      <Filter>Source Files\Modules</Filter>
+    </ClCompile>
+    <ClCompile Include="src\buffer_management.cpp">
+      <Filter>Source Files\Tools</Filter>
+    </ClCompile>
+    <ClCompile Include="externals\stb\stb.cpp">
+      <Filter>Source Files\stb</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -109,6 +133,24 @@
     </ClInclude>
     <ClInclude Include="src\camera.h">
       <Filter>Header Files\OCS\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="src\scene.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\resource_manager.h">
+      <Filter>Header Files\Modules</Filter>
+    </ClInclude>
+    <ClInclude Include="src\resources.h">
+      <Filter>Header Files\Tools</Filter>
+    </ClInclude>
+    <ClInclude Include="src\buffer_management.h">
+      <Filter>Header Files\Tools</Filter>
+    </ClInclude>
+    <ClInclude Include="externals\stb\stb_image.h">
+      <Filter>Header Files\stb</Filter>
+    </ClInclude>
+    <ClInclude Include="externals\stb\stb_image_write.h">
+      <Filter>Header Files\stb</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

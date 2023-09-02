@@ -11,6 +11,8 @@ enum Update_State;
 
 class RenderModule;
 class InputModule;
+class ResourceManager;
+class Scene;
 
 class App
 {
@@ -26,6 +28,8 @@ private:
 	std::chrono::steady_clock::time_point frame_begin;	// High performance timer to overview application efficiency
 	std::vector<Module*> modules;
 
+	ResourceManager* resource;
+	Scene* main_scene;
 
 public:
 	// Public methods

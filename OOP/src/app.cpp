@@ -10,14 +10,20 @@
 #include "input.h"
 #include "render.h"
 
+#include "resource_manager.h"
+#include "scene.h"
+
 App::App() : quit(false)
 {
 	input = DBG_NEW InputModule(this);
-	renderer = DBG_NEW RenderModule(this);
+	resource = DBG_NEW ResourceManager(this);
 
 	module_add(input);
 
+	main_scene = DBG_NEW Scene(resource);
+	renderer = DBG_NEW RenderModule(this, resource, main_scene);
 	module_add(renderer);
+
 }
 
 App::~App()
@@ -28,6 +34,9 @@ App::~App()
 		modules[i] = nullptr;
 	}
 	modules.clear();
+
+	if (resource != nullptr) RELEASE(resource);
+	if (main_scene != nullptr) RELEASE(main_scene);
 }
 
 bool App::initialize()
@@ -35,10 +44,13 @@ bool App::initialize()
 	bool ret = true;
 
 	LOG("Initializing application modules...");
-	for (int i = 0; i < modules.size() && ret; ++i)
+	for (unsigned int i = 0; i < modules.size() && ret; ++i)
 	{
 		ret = modules[i]->initialize();
 	}
+
+	resource->initial_load();
+
 	LOG("Starting application modules...");
 	for (unsigned int i = 0; i < modules.size() && ret; ++i)
 	{
@@ -56,6 +68,7 @@ Update_State App::update()
 	{
 		ret = modules[i]->pre_update();
 	}
+	main_scene->update();
 	for (unsigned int i = 0; i < modules.size() && ret == UPDATE_CONTINUE; ++i)
 	{
 		ret = modules[i]->update();
@@ -71,11 +84,23 @@ Update_State App::update()
 bool App::clean_up()
 {
 	bool ret = true;
-
+	main_scene->clean_up();
 	for (int i = modules.size() - 1; i >= 0 && ret; --i)
 	{
 		ret = modules[i]->clean_up();
+		delete modules[i];
 	}
+	modules.clear();
+
+	// resource cleanup call TODO
+
+	RELEASE(resource);
+	resource = nullptr;
+
+	main_scene->clean_up();
+
+	RELEASE(main_scene);
+	main_scene = nullptr;
 
 	ASSERT(ret, "App clean up failed!");
 

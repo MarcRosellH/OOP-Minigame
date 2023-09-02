@@ -7,59 +7,64 @@
 #include <glad/glad.h>
 #include <glad/khrplatform.h>
 
-#include <glm/glm.hpp>
+#include <glm\glm.hpp>
 
 #include "module.h"
 #include "input.h"
+#include "buffer_management.h"
 
+#define BINDING(b) b
+
+enum LIGHT_TYPE
+{
+	LIGHTTYPE_DIRECTIONAL,
+	LIGHTTYPE_POINT
+};
+
+struct Light
+{
+	LIGHT_TYPE	type;
+	glm::vec3	color;
+	glm::vec3	position;
+	glm::vec3	direction;
+	float		radius;
+	float		intensity;
+};
+
+struct VertexV3V2
+{
+	glm::vec3 pos;
+	glm::vec2 uv;
+};
+
+struct Quad
+{
+	GLuint vao;
+
+	GLuint embedded_vertices;
+	GLuint embedded_elements;
+
+	VertexV3V2 vertices[4] = { glm::vec3(-1.0f, -1.0f, 0.0f),	glm::vec2(0.0f, 0.0f),
+							   glm::vec3(1.0f, -1.0f, 0.0f),	glm::vec2(1.0f, 0.0f),
+							   glm::vec3(1.0f,  1.0f, 0.0f),	glm::vec2(1.0f, 1.0f),
+							   glm::vec3(-1.0f,  1.0f, 0.0f),	glm::vec2(0.0f, 1.0f)
+	};
+
+	unsigned short indices[6] = { 0, 1, 2, 0, 2, 3 };
+};
+
+struct Mesh;
+struct ShaderProgram;
 struct GLFWwindow;
+class Scene;
 
-struct Buffer
-{
-	GLuint			handle;
-	GLenum			type;
-	unsigned int    size;
-	unsigned int    head;
-	void*			data;
-};
-
-struct VertexBufferAttribute
-{
-	unsigned char	location;
-	unsigned char	component_count;
-	unsigned char	offset;
-};
-
-struct VertexBufferLayout
-{
-	std::vector<VertexBufferAttribute>	attributes;
-	unsigned char						stride;
-};
-
-struct VertexShaderAttribute
-{
-	unsigned char location;
-	unsigned char component_count;
-};
-
-struct VertexShaderLayout
-{
-	std::vector<VertexShaderAttribute> attributes;
-};
-
-struct ShaderProgram
-{
-	GLuint					handle;
-	std::string				file_path;
-	std::string				name;
-	VertexShaderLayout		vertex_input_layout;
-};
+class ResourceManager;
 
 class RenderModule : public Module
 {
 public:
 	// Public methods
-	RenderModule(App* _app);
+	RenderModule(App* _app, ResourceManager* _resource, Scene* _scene_ref);
 	virtual ~RenderModule();
 
 	bool initialize() override;
@@ -71,20 +76,21 @@ public:
 
 private:
 	// Private methods
-	unsigned int load_shader_program(const char* _file_path, const char* _program_name);
+
+	GLuint find_vao(Mesh& _mesh, unsigned int submesh_index, const ShaderProgram& _program);
+
+	void render_quad();
+
+	void generate_quad();
 
 public:
 	// Public data
+	Scene* scene_ref;
 
 private:
 	// Private data
 	GLFWwindow* window;
 	glm::ivec2	display_size;
-
-	// Shader programs data
-	std::vector<ShaderProgram> shader_programs;
-	unsigned int deferred_geometry_pass_program_index;
-	unsigned int deferred_lighting_pass_program_index;
 
 	// Deferred rendering ---------------------------
 
@@ -100,14 +106,20 @@ private:
 
 	GLuint final_render_attachment_handle;
 
-	// Deferred rendering uniforms
-	GLint deferred_geometry_program_uTexture;
-
-	GLint deferred_lighting_program_uGPosition;
-	GLint deferred_lighting_program_uGNormals;
-	GLint deferred_lighting_program_uGDiffuse;
-
 	// ---------------------------------------------
+
+	GLint	max_uniform_buffer_size;
+	GLint	uniform_block_alignment;
+	Buffer	uniform_buffer;
+	
+	unsigned int global_params_offset;
+	unsigned int global_params_size;
+
+	Quad quad;
+
+	std::vector<Light> lights;
+
+	ResourceManager* resource;
 };
 
 // OpenGL callbacks
@@ -127,39 +139,5 @@ void on_glfw_char_event(GLFWwindow* _window, unsigned int _character);
 void on_glfw_resize_framebuffer(GLFWwindow* _window, int _width, int _height);
 
 void on_glfw_close_window(GLFWwindow* _window);
-
-// Buffer Management
-
-Buffer create_buffer(unsigned int _size, GLenum _type, GLenum _usage);
-
-void push_aligned_data(Buffer& _buffer, const void* _data, unsigned int _size, unsigned int _alignment);
-
-void bind_buffer(const Buffer& _buffer);
-void align_head(Buffer& _buffer, unsigned int _alignment);
-
-void map_buffer(Buffer& _buffer, GLenum _access);
-void unmap_buffer(Buffer& _buffer);
-
-bool is_power_of_2(unsigned int _value);
-
-unsigned int align(unsigned int _value, unsigned int _alignment);
-
-#define CreateConstantBuffer(_size) create_buffer(_size, GL_UNIFORM_BUFFER, GL_STREAM_DRAW);
-#define CreateStaticVertexBuffer(_size) create_buffer(_size, GL_ARRAY_BUFFER, GL_STATIC_DRAW);
-#define CreateStaticIndexBuffer(_size) create_buffer(_size, GL_ELEMENT_ARRAY_BUFFER, GL_STATIC_DRAW);
-
-#define PushData(_buffer, _data, _size) push_aligned_data(_buffer, _data, _size, 1);
-#define PushUInt(_buffer, _value) {unsigned int v = _value; push_aligned_data(_buffer, &v, sizeof(v), 4);}
-#define PushFloat(_buffer, _value) {float v = _value; push_aligned_data(_buffer, &v, sizeof(v), 4);}
-#define PushVec3(_buffer, _value) push_aligned_data(_buffer, value_ptr(_value), sizeof(_value), sizeof(glm::vec4))
-#define PushVec4(_buffer, _value) push_aligned_data(_buffer, value_ptr(_value), sizeof(_value), sizeof(glm::vec4))
-#define PushMat3(_buffer, _value) push_aligned_data(_buffer, value_ptr(_value), sizeof(_value), sizeof(glm::vec4))
-#define PushMat4(_buffer, _value) push_aligned_data(_buffer, value_ptr(_value), sizeof(_value), sizeof(glm::vec4))
-
-// Shader loader
-
-GLuint create_shader_program_from_source(std::string& _program_src, const char* _shader_name);
-
-unsigned char get_attric_component_count(const GLenum& _type);
 
 #endif // !__RENDERMODULE_H__
