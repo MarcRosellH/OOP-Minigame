@@ -312,11 +312,12 @@ Update_State RenderModule::post_update()
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     /* Second pass (lighting) */
+    glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "Final pass");
 
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_final);
 
     glClearColor(0.f, 0.f, 0.f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
+    //glClear(GL_COLOR_BUFFER_BIT);
 
     GLenum drawBuffersFBuffer[] = { GL_COLOR_ATTACHMENT3 };
     glDrawBuffers(ARRAY_COUNT(drawBuffersFBuffer), drawBuffersFBuffer);
@@ -344,7 +345,6 @@ Update_State RenderModule::post_update()
 
     glBindBufferRange(GL_UNIFORM_BUFFER, BINDING(0), uniform_buffer.handle, global_params_offset, global_params_size);
 
-    render_quad();
 
     glBindFramebuffer(GL_READ_FRAMEBUFFER, framebuffer_geometry);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, framebuffer_final);
@@ -354,7 +354,11 @@ Update_State RenderModule::post_update()
     glUseProgram(0);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    //render_quad();
+    glPopDebugGroup();
     (*packages).clear();
+
+    //glfwSwapBuffers(window);
 
 	return UPDATE_CONTINUE;
 }
