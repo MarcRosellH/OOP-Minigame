@@ -221,7 +221,7 @@ Update_State RenderModule::post_update()
 
     global_params_offset = uniform_buffer.head;
 
-    PushVec3(uniform_buffer, scene_ref->camera_ref->position);  // TODO: continue here
+    PushVec3(uniform_buffer, scene_ref->camera_ref->position);
     PushUInt(uniform_buffer, lights.size());
 
     for (unsigned int i = 0; i < lights.size(); ++i)
@@ -229,12 +229,12 @@ Update_State RenderModule::post_update()
         align_head(uniform_buffer, sizeof(glm::vec4));
 
         Light& light = lights[i];
-        PushUInt(uniform_buffer, light.type);
+        /*PushUInt(uniform_buffer, light.type);
         PushVec3(uniform_buffer, light.color);
         PushVec3(uniform_buffer, light.direction);
         PushFloat(uniform_buffer, light.intensity);
         PushVec3(uniform_buffer, light.position);
-        PushFloat(uniform_buffer, light.radius);
+        PushFloat(uniform_buffer, light.radius);*/
     }
 
     global_params_size = uniform_buffer.head - global_params_offset;
@@ -249,8 +249,8 @@ Update_State RenderModule::post_update()
 
         ref.local_params_offset = uniform_buffer.head;
         
-        PushMat4(uniform_buffer, ref.position_rotation_scale_matrix);
-        PushMat4(uniform_buffer, world_view_projection_matrix);
+        /*PushMat4(uniform_buffer, ref.position_rotation_scale_matrix);
+        PushMat4(uniform_buffer, world_view_projection_matrix);*/
 
         ref.local_params_size = uniform_buffer.head - ref.local_params_offset;
     }
@@ -291,19 +291,19 @@ Update_State RenderModule::post_update()
         for (unsigned int i = 0; i < mesh.submeshes.size(); ++i)
         {
             GLuint vao = find_vao(mesh, i, deferredGeometryPassProgram);
-            glBindVertexArray(vao);
+            //glBindVertexArray(vao);
 
             unsigned int submesh_material_index = model.material_index[i];
             Material& submesh_material = resource->materials[submesh_material_index];
 
-            glActiveTexture(GL_TEXTURE0);
+            /*glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, resource->textures[submesh_material.albedo_texture_index].handle);
             glUniform1i(resource->deferred_geometry_program_uTexture, 0);
 
             Submesh& submesh = mesh.submeshes[i];
             glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(unsigned long long)submesh.index_offset);
 
-            glBindVertexArray(0);
+            glBindVertexArray(0);*/
         }
     }
 
@@ -354,11 +354,11 @@ Update_State RenderModule::post_update()
     glUseProgram(0);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    //render_quad();
+    render_quad();
     glPopDebugGroup();
     (*packages).clear();
 
-    //glfwSwapBuffers(window);
+    glfwSwapBuffers(window);
 
 	return UPDATE_CONTINUE;
 }

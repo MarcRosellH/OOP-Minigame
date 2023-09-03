@@ -139,6 +139,7 @@
     <ClCompile Include="externals\glad\include\glad\glad.c" />
     <ClCompile Include="externals\stb\stb.cpp" />
     <ClCompile Include="src\app.cpp" />
+    <ClCompile Include="src\behaviour.cpp" />
     <ClCompile Include="src\buffer_management.cpp" />
     <ClCompile Include="src\camera.cpp" />
     <ClCompile Include="src\input.cpp" />
@@ -157,6 +158,7 @@
     <ClInclude Include="externals\stb\stb_image.h" />
     <ClInclude Include="externals\stb\stb_image_write.h" />
     <ClInclude Include="src\app.h" />
+    <ClInclude Include="src\behaviour.h" />
     <ClInclude Include="src\buffer_management.h" />
     <ClInclude Include="src\camera.h" />
     <ClInclude Include="src\component.h" />

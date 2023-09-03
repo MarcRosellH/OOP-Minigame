@@ -93,6 +93,9 @@
     <ClCompile Include="externals\stb\stb.cpp">
       <Filter>Source Files\stb</Filter>
     </ClCompile>
+    <ClCompile Include="src\behaviour.cpp">
+      <Filter>Source Files\OCS\Components</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\app.h">
@@ -151,6 +154,9 @@
     </ClInclude>
     <ClInclude Include="externals\stb\stb_image_write.h">
       <Filter>Header Files\stb</Filter>
+    </ClInclude>
+    <ClInclude Include="src\behaviour.h">
+      <Filter>Header Files\OCS\Components</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

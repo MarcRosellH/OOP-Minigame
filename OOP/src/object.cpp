@@ -9,15 +9,18 @@
 #include "transform.h"
 #include "mesh_render.h"
 #include "camera.h"
+#include "behaviour.h"
 
 Object::Object(Scene* _scene, bool _active) : scene(_scene), active(_active), parent(nullptr)
 {
 	/*Component* transform_component_aux = DBG_NEW ComponentTransform(this);
 	components.push_back(transform_component_aux);*/
+	scene->total_count++;
 }
 
 Object::~Object()
 {
+	scene->total_count--;
 	clean_up();
 }
 
@@ -38,6 +41,10 @@ Component* Object::add_component(COMPONENT_TYPE _type)
 	case COMPONENT_TYPE::COMPONENT_CAMERA:
 		scene->camera_ref = DBG_NEW ComponentCamera(this);
 		new_component = scene->camera_ref;
+		components.push_back(new_component);
+		break;
+	case COMPONENT_TYPE::COMPONENT_BEHAVIOUR:
+		new_component = DBG_NEW ComponentBehaviour(this);
 		components.push_back(new_component);
 		break;
 	default:
@@ -66,6 +73,16 @@ void Object::update()
 	{
 		child[i]->update();
 	}
+	scene->object_count++;
+	if (scene->total_count < MAX_OBJECTS)
+	{
+		Object* ref = add_child();
+		ref->set_type(OBJECT_TYPE::ENEMY);
+		ref->add_component(COMPONENT_TYPE::COMPONENT_TRANSFORM);
+		ref->add_component(COMPONENT_TYPE::COMPONENT_MESH_RENDER)->start();
+		ref->add_component(COMPONENT_TYPE::COMPONENT_BEHAVIOUR);
+		ref->transform->set_position(glm::vec3(1.F, 1.F, 1.F));
+	}
 }
 
 void Object::clean_up()
@@ -81,6 +98,7 @@ void Object::clean_up()
 	{
 		child[i]->clean_up();
 		RELEASE(child[i]);
+		child.pop_back();
 	}
 	child.clear();
 }
@@ -105,6 +123,7 @@ void Object::delete_child(Object* _ref)
 		if ((*it) == _ref)
 		{
 			child.erase(it);
+			RELEASE(_ref);
 			return;
 		}
 	}

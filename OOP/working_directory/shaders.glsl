@@ -11,20 +11,18 @@ layout(binding = 1, std140) uniform LocalParams
 {
 	mat4 uWorldMatrix;
 	mat4 uWorldViewProjectionMatrix;
-	float metallic;
 };
 
 out vec2 vTexCoord;
 out vec3 vPosition;
 out vec3 vNormal;
-out float metallicness;
 
 void main()
 {
 	vTexCoord = aTexCoord;
 	vPosition = vec3(uWorldMatrix * vec4(aPosition, 1.0));
 	vNormal = vec3(transpose(inverse(uWorldMatrix)) * vec4(aNormal, 1.0));
-	metallicness = metallic;
+
 	gl_Position = uWorldViewProjectionMatrix * vec4(aPosition, 1.0);
 }
 
@@ -33,13 +31,8 @@ void main()
 in vec2 vTexCoord;
 in vec3 vPosition;
 in vec3 vNormal;
-in float metallicness;
 
 uniform sampler2D uTexture;
-uniform vec3 uColor;
-uniform vec3 cameraPos;
-uniform samplerCube skybox;
-uniform samplerCube irradianceMap;
 
 layout(location = 0) out vec4 oPosition;
 layout(location = 1) out vec4 oNormals;
@@ -50,21 +43,10 @@ out float gl_FragDepth;
 void main()
 {
 	vec3 c = texture(uTexture, vTexCoord).rgb;
-	
+
 	oPosition = vec4(vPosition, 1.0);
 	oNormals = vec4(normalize(vNormal), 1.0);
-	oColor = vec4(c*uColor, 1.0);
-
-	vec3 I = normalize(vPosition - cameraPos);
-    vec3 R = reflect(I, normalize(vNormal));
-	vec4 ReflectionColor = vec4(texture(skybox, R).rgb, 1.0);
-
-	vec3 ambient = texture(irradianceMap, vNormal).rgb;
-
-
-    oColor = mix(vec4(uColor, 1.0), ReflectionColor, metallicness) * 1.7*vec4(ambient, 1.0);
-
-	// * vec4(ambient, 1.0)
+	oColor = vec4(c, 1.0);
 
 	gl_FragDepth = gl_FragCoord.z - 0.2;
 }
@@ -127,17 +109,17 @@ layout(binding = 0, std140) uniform GlobalParams
 	Light uLight[16];
 };
 
-layout(location = 0) out vec4 oFinalRender;
-
 uniform sampler2D uGPosition;
 uniform sampler2D uGNormals;
 uniform sampler2D uGDiffuse;
+
+layout(location = 0) out vec4 oFinalRender;
 
 vec3 DirectionalLight(Light light, vec3 Normal, vec3 Diffuse)
 {
 	float cosAngle = max(dot(Normal, -light.direction), 0.0); 
     vec3 ambient = 0.1 * light.color;
-    vec3 diffuse = 0.9 * light.color * cosAngle * light.intensity;
+    vec3 diffuse = 0.9 * light.color * cosAngle;
 
     return (ambient + diffuse) * Diffuse;
 }
@@ -178,7 +160,7 @@ void main()
 
 	vec3 viewDir = normalize(uCameraPosition - FragPos);
 
-	vec3 lighting = Diffuse * 1.0;
+	vec3 lighting = Diffuse * 0.1;
     for(int i = 0; i < uLightCount; ++i)
     {
 		switch(uLight[i].type)
@@ -208,9 +190,7 @@ void main()
     }
 
 	oFinalRender = vec4(lighting * Diffuse, 1.0);
-
 }
-
 #endif
 #endif
 // This comment prevents a shader compilation error. Shader compiler was adding non-ASCII characters in this line, and couldn't process it

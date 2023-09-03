@@ -4,6 +4,7 @@
 #include "utils.h"
 
 #include <glm/glm.hpp>
+#include <iostream>
 
 #include "resource_manager.h"
 
@@ -12,7 +13,7 @@
 #include "camera.h"
 #include "transform.h"
 
-Scene::Scene(ResourceManager* _resource) : resource(_resource)
+Scene::Scene(ResourceManager* _resource) : resource(_resource), object_count(0), total_count(0)
 {
 	root = DBG_NEW Object(this, true);
 
@@ -23,7 +24,9 @@ Scene::Scene(ResourceManager* _resource) : resource(_resource)
 	ref->set_type(OBJECT_TYPE::ENEMY);
 	ref->add_component(COMPONENT_TYPE::COMPONENT_TRANSFORM);
 	ref->add_component(COMPONENT_TYPE::COMPONENT_MESH_RENDER)->start();
+	ref->add_component(COMPONENT_TYPE::COMPONENT_BEHAVIOUR);
 	ref->transform->set_position(glm::vec3(1.F, 1.F, 1.F));
+	srand((unsigned)time(NULL));
 }
 
 Scene::~Scene()
@@ -32,8 +35,17 @@ Scene::~Scene()
 
 bool Scene::update()
 {
+	for (int i = to_delete_objects.size()-1; i >= 0; i--)
+	{
+		to_delete_objects[i]->get_parent()->delete_child(to_delete_objects[i]);
+		to_delete_objects.pop_back();
+	}
+	object_count = 0;
 	root->update();
 	camera->update();
+	if(total_count != last_max_count)
+		std::cout << total_count << std::endl;
+	last_max_count = total_count;
 	return true;
 }
 

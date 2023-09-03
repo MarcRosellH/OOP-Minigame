@@ -2,9 +2,13 @@
 #ifndef __SCENE_H__
 #define __SCENE_H__
 
+#include <vector>
+
 class Object;
 class ResourceManager;
 class ComponentCamera;
+
+#define MAX_OBJECTS 1000
 
 class Scene
 {
@@ -23,11 +27,16 @@ public:
 
 public:
     // Private methods
-    void create_camera_object();
 
 public:
     // Public data
     ComponentCamera* camera_ref;
+
+    unsigned int object_count;
+    unsigned int total_count;
+    unsigned int last_max_count;
+
+    std::vector<Object*> to_delete_objects;
 
 private:
     // Private data
