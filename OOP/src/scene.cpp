@@ -5,6 +5,7 @@
 
 #include <glm/glm.hpp>
 #include <iostream>
+#include <stdlib.h>
 
 #include "resource_manager.h"
 
@@ -43,9 +44,13 @@ bool Scene::update()
 	object_count = 0;
 	root->update();
 	camera->update();
-	if(total_count != last_max_count)
+	if (total_count != last_max_count)
+	{
+		system("cls");
 		std::cout << total_count << std::endl;
+	}
 	last_max_count = total_count;
+	resource->get_render_packs_vector()->clear();
 	return true;
 }
 

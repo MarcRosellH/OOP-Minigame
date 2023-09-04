@@ -33,66 +33,66 @@ void ResourceManager::initial_load()
     // 
     // [Deferred Render] Geometry Pass Program
 
-    textured_mesh_index = load_shader_program("shaders.glsl", "TEXTURED_GEOMETRY");
-    ShaderProgram& textured_mesh_program = shader_programs[textured_mesh_index];
-    textured_program_uTexture = glGetUniformLocation(textured_mesh_program.handle, "uTexture");
+    //textured_mesh_index = load_shader_program("shaders.glsl", "TEXTURED_GEOMETRY");
+    //ShaderProgram& textured_mesh_program = shader_programs[textured_mesh_index];
+    //textured_program_uTexture = glGetUniformLocation(textured_mesh_program.handle, "uTexture");
 
-    deferred_geometry_pass_program_index = load_shader_program("shaders.glsl", "DEFERRED_GEOMETRY_PASS");
+    //deferred_geometry_pass_program_index = load_shader_program("shaders.glsl", "DEFERRED_GEOMETRY_PASS");
 
-    ShaderProgram& deferred_geo_pass_program = shader_programs[deferred_geometry_pass_program_index];
-    GLint deferred_geo_attribute_count;
-    glGetProgramiv(deferred_geo_pass_program.handle, GL_ACTIVE_ATTRIBUTES, &deferred_geo_attribute_count);
+    //ShaderProgram& deferred_geo_pass_program = shader_programs[deferred_geometry_pass_program_index];
+    //GLint deferred_geo_attribute_count;
+    //glGetProgramiv(deferred_geo_pass_program.handle, GL_ACTIVE_ATTRIBUTES, &deferred_geo_attribute_count);
 
-    for (GLint i = 0; i < deferred_geo_attribute_count; ++i)
-    {
-        GLchar attr_name[32];
-        GLsizei attr_len;
-        GLint attr_size;
-        GLenum attr_type;
+    //for (GLint i = 0; i < deferred_geo_attribute_count; ++i)
+    //{
+    //    GLchar attr_name[32];
+    //    GLsizei attr_len;
+    //    GLint attr_size;
+    //    GLenum attr_type;
 
-        glGetActiveAttrib(deferred_geo_pass_program.handle, i,
-            ARRAY_COUNT(attr_name),
-            &attr_len,
-            &attr_size,
-            &attr_type,
-            attr_name);
+    //    glGetActiveAttrib(deferred_geo_pass_program.handle, i,
+    //        ARRAY_COUNT(attr_name),
+    //        &attr_len,
+    //        &attr_size,
+    //        &attr_type,
+    //        attr_name);
 
-        GLint attr_location = glGetAttribLocation(deferred_geo_pass_program.handle, attr_name);
+    //    GLint attr_location = glGetAttribLocation(deferred_geo_pass_program.handle, attr_name);
 
-        deferred_geo_pass_program.vertex_input_layout.attributes.push_back({ (unsigned char)attr_location, get_attric_component_count(attr_type) });
-    }
+    //    deferred_geo_pass_program.vertex_input_layout.attributes.push_back({ (unsigned char)attr_location, get_attric_component_count(attr_type) });
+    //}
 
-    deferred_geometry_program_uTexture = glGetUniformLocation(deferred_geo_pass_program.handle, "uTexture");
+    //deferred_geometry_program_uTexture = glGetUniformLocation(deferred_geo_pass_program.handle, "uTexture");
 
-    // [Deferred Render] Lighting Pass Program
-    deferred_lighting_pass_program_index = load_shader_program("shaders.glsl", "DEFERRED_LIGHTING_PASS");
+    //// [Deferred Render] Lighting Pass Program
+    //deferred_lighting_pass_program_index = load_shader_program("shaders.glsl", "DEFERRED_LIGHTING_PASS");
 
-    ShaderProgram& deferred_lighting_pass_program = shader_programs[deferred_lighting_pass_program_index];
-    GLint deferred_light_attribute_count;
-    glGetProgramiv(deferred_lighting_pass_program.handle, GL_ACTIVE_ATTRIBUTES, &deferred_light_attribute_count);
+    //ShaderProgram& deferred_lighting_pass_program = shader_programs[deferred_lighting_pass_program_index];
+    //GLint deferred_light_attribute_count;
+    //glGetProgramiv(deferred_lighting_pass_program.handle, GL_ACTIVE_ATTRIBUTES, &deferred_light_attribute_count);
 
-    for (GLint i = 0; i < deferred_light_attribute_count; ++i)
-    {
-        GLchar attr_name[32];
-        GLsizei attr_len;
-        GLint attr_size;
-        GLenum attr_type;
+    //for (GLint i = 0; i < deferred_light_attribute_count; ++i)
+    //{
+    //    GLchar attr_name[32];
+    //    GLsizei attr_len;
+    //    GLint attr_size;
+    //    GLenum attr_type;
 
-        glGetActiveAttrib(deferred_lighting_pass_program.handle, i,
-            ARRAY_COUNT(attr_name),
-            &attr_len,
-            &attr_size,
-            &attr_type,
-            attr_name);
+    //    glGetActiveAttrib(deferred_lighting_pass_program.handle, i,
+    //        ARRAY_COUNT(attr_name),
+    //        &attr_len,
+    //        &attr_size,
+    //        &attr_type,
+    //        attr_name);
 
-        GLint attr_location = glGetAttribLocation(deferred_lighting_pass_program.handle, attr_name);
+    //    GLint attr_location = glGetAttribLocation(deferred_lighting_pass_program.handle, attr_name);
 
-        deferred_lighting_pass_program.vertex_input_layout.attributes.push_back({ (unsigned char)attr_location, get_attric_component_count(attr_type) });
-    }
+    //    deferred_lighting_pass_program.vertex_input_layout.attributes.push_back({ (unsigned char)attr_location, get_attric_component_count(attr_type) });
+    //}
 
-    deferred_lighting_program_uGPosition = glGetUniformLocation(deferred_lighting_pass_program.handle, "uGPosition");
-    deferred_lighting_program_uGNormals = glGetUniformLocation(deferred_lighting_pass_program.handle, "uGNormals");
-    deferred_lighting_program_uGDiffuse = glGetUniformLocation(deferred_lighting_pass_program.handle, "uGDiffuse");
+    //deferred_lighting_program_uGPosition = glGetUniformLocation(deferred_lighting_pass_program.handle, "uGPosition");
+    //deferred_lighting_program_uGNormals = glGetUniformLocation(deferred_lighting_pass_program.handle, "uGNormals");
+    //deferred_lighting_program_uGDiffuse = glGetUniformLocation(deferred_lighting_pass_program.handle, "uGDiffuse");
 }
 
 unsigned int ResourceManager::get_model_index(const std::string& _model_name)
@@ -116,25 +116,25 @@ void ResourceManager::add_render_pack(unsigned int _mesh_index, glm::mat4 _matri
     to_render.push_back({ _mesh_index, _matrix });
 }
 
-ShaderProgram& ResourceManager::get_shader_program(unsigned int _index)
-{
-    return shader_programs[_index];
-}
-
-unsigned int ResourceManager::get_geometry_shader_index()
-{
-    return deferred_geometry_pass_program_index;
-}
-
-unsigned int ResourceManager::get_lighting_shader_index()
-{
-    return deferred_lighting_pass_program_index;
-}
-
-unsigned int ResourceManager::get_textured_shader_index()
-{
-    return textured_mesh_index;
-}
+//ShaderProgram& ResourceManager::get_shader_program(unsigned int _index)
+//{
+//    return shader_programs[_index];
+//}
+//
+//unsigned int ResourceManager::get_geometry_shader_index()
+//{
+//    return deferred_geometry_pass_program_index;
+//}
+//
+//unsigned int ResourceManager::get_lighting_shader_index()
+//{
+//    return deferred_lighting_pass_program_index;
+//}
+//
+//unsigned int ResourceManager::get_textured_shader_index()
+//{
+//    return textured_mesh_index;
+//}
 
 void process_assimp_mesh(const aiScene* scene, aiMesh* mesh, Mesh* myMesh, unsigned int baseMeshMaterialIndex, std::vector<unsigned int>& submeshMaterialIndices)
 {
@@ -348,13 +348,13 @@ unsigned int ResourceManager::load_model(const char* _file_name)
         indexBufferSize += mesh.submeshes[i].indices.size() * sizeof(unsigned int);
     }
 
-    glGenBuffers(1, &mesh.vertex_buffer_handle);
+    /*glGenBuffers(1, &mesh.vertex_buffer_handle);
     glBindBuffer(GL_ARRAY_BUFFER, mesh.vertex_buffer_handle);
     glBufferData(GL_ARRAY_BUFFER, vertexBufferSize, NULL, GL_STATIC_DRAW);
 
     glGenBuffers(1, &mesh.index_buffer_handle);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.index_buffer_handle);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexBufferSize, NULL, GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexBufferSize, NULL, GL_STATIC_DRAW);*/
 
     unsigned int indicesOffset = 0;
     unsigned int verticesOffset = 0;
@@ -363,19 +363,19 @@ unsigned int ResourceManager::load_model(const char* _file_name)
     {
         const void* verticesData = mesh.submeshes[i].vertices.data();
         const unsigned int   verticesSize = mesh.submeshes[i].vertices.size() * sizeof(float);
-        glBufferSubData(GL_ARRAY_BUFFER, verticesOffset, verticesSize, verticesData);
+        //glBufferSubData(GL_ARRAY_BUFFER, verticesOffset, verticesSize, verticesData);
         mesh.submeshes[i].vertex_offset = verticesOffset;
         verticesOffset += verticesSize;
 
         const void* indicesData = mesh.submeshes[i].indices.data();
         const unsigned int   indicesSize = mesh.submeshes[i].indices.size() * sizeof(unsigned int);
-        glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, indicesOffset, indicesSize, indicesData);
+        //glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, indicesOffset, indicesSize, indicesData);
         mesh.submeshes[i].index_offset = indicesOffset;
         indicesOffset += indicesSize;
     }
 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+   /* glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);*/
 
 
     return modelIdx;
@@ -559,7 +559,7 @@ GLuint ResourceManager::create_texture_2D_from_image(Image _image)
     default: LOG("LoadTexture2D() - Unsupported number of channels");
     }
 
-    GLuint texHandle;
+   /* GLuint texHandle;
     glGenTextures(1, &texHandle);
     glBindTexture(GL_TEXTURE_2D, texHandle);
     glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, _image.size.x, _image.size.y, 0, dataFormat, dataType, _image.pixels);
@@ -569,9 +569,9 @@ GLuint ResourceManager::create_texture_2D_from_image(Image _image)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glGenerateMipmap(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D, 0);
+    glBindTexture(GL_TEXTURE_2D, 0);*/
 
-    return texHandle;
+    return 0;
 }
 
 Image ResourceManager::load_image(const char* _file_name)

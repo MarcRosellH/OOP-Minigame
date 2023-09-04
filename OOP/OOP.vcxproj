@@ -146,7 +146,6 @@
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\mesh_render.cpp" />
     <ClCompile Include="src\object.cpp" />
-    <ClCompile Include="src\render.cpp" />
     <ClCompile Include="src\resource_manager.cpp" />
     <ClCompile Include="src\scene.cpp" />
     <ClCompile Include="src\transform.cpp" />

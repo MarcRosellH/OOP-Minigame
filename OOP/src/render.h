@@ -68,8 +68,8 @@ public:
 	virtual ~RenderModule();
 
 	bool initialize() override;
-	Update_State pre_update() override;
-	Update_State post_update() override;
+	//Update_State pre_update() override;
+	//Update_State post_update() override;
 	bool clean_up() override;
 
 	void set_display_size(const int _new_width, const int _new_height);

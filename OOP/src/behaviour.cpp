@@ -19,7 +19,7 @@ void ComponentBehaviour::update()
 {
 	glm::vec3 aux = object->transform->get_position();
 	object->transform->set_position(glm::vec3(aux.x + vel.x, aux.y + vel.y, aux.z + vel.z));
-	if (abs(aux.x) > 100 || abs(aux.y) > 100 || abs(aux.z) > 100)
+	if (abs(aux.x) > 70 || abs(aux.y) > 70 || abs(aux.z) > 70)
 	{
 		set_to_delete();
 	}

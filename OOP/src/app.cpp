@@ -21,8 +21,8 @@ App::App() : quit(false)
 	module_add(input);
 
 	main_scene = DBG_NEW Scene(resource);
-	renderer = DBG_NEW RenderModule(this, resource, main_scene);
-	module_add(renderer);
+	//renderer = DBG_NEW RenderModule(this, resource, main_scene);
+	//module_add(renderer);
 
 }
 

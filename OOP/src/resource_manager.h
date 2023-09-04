@@ -45,11 +45,11 @@ public:
 
 	void add_render_pack(unsigned int _mesh_index, glm::mat4 _matrix);
 
-	ShaderProgram& get_shader_program(unsigned int _index);
+	/*ShaderProgram& get_shader_program(unsigned int _index);
 
 	unsigned int get_geometry_shader_index();
 	unsigned int get_lighting_shader_index();
-	unsigned int get_textured_shader_index();
+	unsigned int get_textured_shader_index();*/
 
 private:
 	// Private methods

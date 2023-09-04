@@ -60,9 +60,6 @@
     <ClCompile Include="src\utils.cpp">
       <Filter>Source Files\Tools</Filter>
     </ClCompile>
-    <ClCompile Include="src\render.cpp">
-      <Filter>Source Files\Modules</Filter>
-    </ClCompile>
     <ClCompile Include="src\input.cpp">
       <Filter>Source Files\Modules</Filter>
     </ClCompile>
