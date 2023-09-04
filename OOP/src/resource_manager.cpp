@@ -136,7 +136,7 @@ unsigned int ResourceManager::get_textured_shader_index()
     return textured_mesh_index;
 }
 
-void ProcessAssimpMesh(const aiScene* scene, aiMesh* mesh, Mesh* myMesh, unsigned int baseMeshMaterialIndex, std::vector<unsigned int>& submeshMaterialIndices)
+void process_assimp_mesh(const aiScene* scene, aiMesh* mesh, Mesh* myMesh, unsigned int baseMeshMaterialIndex, std::vector<unsigned int>& submeshMaterialIndices)
 {
     std::vector<float> vertices;
     std::vector<unsigned int> indices;
@@ -222,7 +222,7 @@ void ProcessAssimpMesh(const aiScene* scene, aiMesh* mesh, Mesh* myMesh, unsigne
     myMesh->submeshes.push_back(submesh);
 }
 
-void ResourceManager::ProcessAssimpMaterial(aiMaterial* material, Material& myMaterial, std::string directory)
+void ResourceManager::process_assimp_material(aiMaterial* material, Material& myMaterial, std::string directory)
 {
     aiString name;
     aiColor3D diffuseColor;
@@ -280,19 +280,19 @@ void ResourceManager::ProcessAssimpMaterial(aiMaterial* material, Material& myMa
     //myMaterial.createNormalFromBump();
 }
 
-void ProcessAssimpNode(const aiScene* scene, aiNode* node, Mesh* myMesh, unsigned int baseMeshMaterialIndex, std::vector<unsigned int>& submeshMaterialIndices)
+void process_assimp_node(const aiScene* scene, aiNode* node, Mesh* myMesh, unsigned int baseMeshMaterialIndex, std::vector<unsigned int>& submeshMaterialIndices)
 {
     // process all the node's meshes (if any)
     for (unsigned int i = 0; i < node->mNumMeshes; i++)
     {
         aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-        ProcessAssimpMesh(scene, mesh, myMesh, baseMeshMaterialIndex, submeshMaterialIndices);
+        process_assimp_mesh(scene, mesh, myMesh, baseMeshMaterialIndex, submeshMaterialIndices);
     }
 
     // then do the same for each of its children
     for (unsigned int i = 0; i < node->mNumChildren; i++)
     {
-        ProcessAssimpNode(scene, node->mChildren[i], myMesh, baseMeshMaterialIndex, submeshMaterialIndices);
+        process_assimp_node(scene, node->mChildren[i], myMesh, baseMeshMaterialIndex, submeshMaterialIndices);
     }
 }
 
@@ -332,10 +332,10 @@ unsigned int ResourceManager::load_model(const char* _file_name)
     {
         materials.push_back(Material{});
         Material& material = materials.back();
-        ProcessAssimpMaterial(scene->mMaterials[i], material, directory);
+        process_assimp_material(scene->mMaterials[i], material, directory);
     }
 
-    ProcessAssimpNode(scene, scene->mRootNode, &mesh, baseMeshMaterialIndex, model.material_index);
+    process_assimp_node(scene, scene->mRootNode, &mesh, baseMeshMaterialIndex, model.material_index);
 
     aiReleaseImport(scene);
 

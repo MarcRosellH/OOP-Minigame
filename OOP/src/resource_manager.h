@@ -55,7 +55,7 @@ private:
 	// Private methods
 	unsigned int load_model(const char* _file_name);
 
-	void ProcessAssimpMaterial(aiMaterial* material, Material& myMaterial, std::string directory);
+	void process_assimp_material(aiMaterial* material, Material& myMaterial, std::string directory);
 
 	unsigned int load_shader_program(const char* _file_path, const char* _program_name);
 

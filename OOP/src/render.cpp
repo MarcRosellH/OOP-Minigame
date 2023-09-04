@@ -202,7 +202,7 @@ bool RenderModule::initialize()
 
 Update_State RenderModule::pre_update()
 {
-	glClearColor(0.F, 0.F, 0.F, 1.F);
+	//glClearColor(0.F, 0.F, 0.F, 1.F);
 	return UPDATE_CONTINUE;
 }
 
@@ -215,18 +215,18 @@ Update_State RenderModule::post_update()
     glm::mat4 projection_matrix = scene_ref->camera_ref->get_projection_matrix();
     glm::mat4 view_matrix = scene_ref->camera_ref->get_view_matrix();
 
-    bind_buffer(uniform_buffer);
+    /*bind_buffer(uniform_buffer);
     uniform_buffer.data = (unsigned char*)glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
     uniform_buffer.head = 0;
 
-    global_params_offset = uniform_buffer.head;
+    global_params_offset = uniform_buffer.head;*/
 
-    PushVec3(uniform_buffer, scene_ref->camera_ref->position);
-    PushUInt(uniform_buffer, lights.size());
+    //PushVec3(uniform_buffer, scene_ref->camera_ref->position);
+    //PushUInt(uniform_buffer, lights.size());
 
     for (unsigned int i = 0; i < lights.size(); ++i)
     {
-        align_head(uniform_buffer, sizeof(glm::vec4));
+        //align_head(uniform_buffer, sizeof(glm::vec4));
 
         Light& light = lights[i];
         /*PushUInt(uniform_buffer, light.type);
@@ -237,11 +237,11 @@ Update_State RenderModule::post_update()
         PushFloat(uniform_buffer, light.radius);*/
     }
 
-    global_params_size = uniform_buffer.head - global_params_offset;
+    //global_params_size = uniform_buffer.head - global_params_offset;
 
     for (unsigned int i = 0; i < (*packages).size(); ++i)
     {
-        align_head(uniform_buffer, uniform_block_alignment);
+        //align_head(uniform_buffer, uniform_block_alignment);
 
         RenderPackage& ref = (*packages)[i];
 
@@ -257,11 +257,11 @@ Update_State RenderModule::post_update()
 
     // Unmap buffer
     glUnmapBuffer(GL_UNIFORM_BUFFER);
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    //glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
     /* First pass (geometry) */
 
-    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_geometry);
+    /*glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_geometry);
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -275,10 +275,11 @@ Update_State RenderModule::post_update()
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    glDepthMask(GL_TRUE);
+    glDepthMask(GL_TRUE);*/
 
-    ShaderProgram& deferredGeometryPassProgram = resource->get_shader_program(resource->get_geometry_shader_index());
-    glUseProgram(deferredGeometryPassProgram.handle);
+    ShaderProgram& deferredGeometryPassProgram = resource->get_shader_program(
+        resource->get_geometry_shader_index());
+    //glUseProgram(deferredGeometryPassProgram.handle);
 
 
     for (const RenderPackage& entity : *packages)
@@ -286,7 +287,7 @@ Update_State RenderModule::post_update()
         Model& model = resource->models[entity.model_index];
         Mesh& mesh = resource->meshes[model.mesh_index];
 
-        glBindBufferRange(GL_UNIFORM_BUFFER, BINDING(1), uniform_buffer.handle, entity.local_params_offset, entity.local_params_size);
+        //glBindBufferRange(GL_UNIFORM_BUFFER, BINDING(1), uniform_buffer.handle, entity.local_params_offset, entity.local_params_size);
 
         for (unsigned int i = 0; i < mesh.submeshes.size(); ++i)
         {
@@ -307,28 +308,28 @@ Update_State RenderModule::post_update()
         }
     }
 
-    glUseProgram(0);
+    /*glUseProgram(0);
 
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);*/
 
     /* Second pass (lighting) */
-    glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "Final pass");
+    //glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "Final pass");
 
-    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_final);
+    //glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_final);
 
-    glClearColor(0.f, 0.f, 0.f, 1.0f);
+    //glClearColor(0.f, 0.f, 0.f, 1.0f);
     //glClear(GL_COLOR_BUFFER_BIT);
 
     GLenum drawBuffersFBuffer[] = { GL_COLOR_ATTACHMENT3 };
-    glDrawBuffers(ARRAY_COUNT(drawBuffersFBuffer), drawBuffersFBuffer);
+    //glDrawBuffers(ARRAY_COUNT(drawBuffersFBuffer), drawBuffersFBuffer);
 
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_ONE, GL_ONE);
+    //glEnable(GL_BLEND);
+    //glBlendFunc(GL_ONE, GL_ONE);
 
     //glDepthMask(GL_FALSE);
 
     ShaderProgram& deferredLightingPassProgram = resource->get_shader_program(resource->get_lighting_shader_index());
-    glUseProgram(deferredLightingPassProgram.handle);
+   /* glUseProgram(deferredLightingPassProgram.handle);
 
     glUniform1i(resource->deferred_lighting_program_uGPosition, 1);
     glUniform1i(resource->deferred_lighting_program_uGNormals, 2);
@@ -355,7 +356,7 @@ Update_State RenderModule::post_update()
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     render_quad();
-    glPopDebugGroup();
+    glPopDebugGroup();*/
     (*packages).clear();
 
     glfwSwapBuffers(window);

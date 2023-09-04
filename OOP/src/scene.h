@@ -8,7 +8,7 @@ class Object;
 class ResourceManager;
 class ComponentCamera;
 
-#define MAX_OBJECTS 1000
+#define MAX_OBJECTS 1024
 
 class Scene
 {
