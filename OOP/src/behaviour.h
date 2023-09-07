@@ -17,7 +17,7 @@ public:
 	ComponentBehaviour(Object* _object);
 	~ComponentBehaviour();
 
-	void update();
+	void update(float dt);
 private:
 	// Private methods
 	void set_to_delete();

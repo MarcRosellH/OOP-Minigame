@@ -21,7 +21,7 @@ void ComponentCamera::start()
 	update_vectors();
 }
 
-void ComponentCamera::update()
+void ComponentCamera::update(float dt)
 {
 	update_vectors();
 }

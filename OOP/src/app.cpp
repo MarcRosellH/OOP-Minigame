@@ -2,6 +2,8 @@
 
 #include "glfw3.h"
 
+#include <iostream>
+
 #include "app.h"
 #include "utils.h"
 #include "memleak.h"
@@ -13,14 +15,14 @@
 #include "resource_manager.h"
 #include "scene.h"
 
-App::App() : quit(false)
+App::App() : quit(false), average_delta_time(0.F), average_fps(0.F), delta_time(0.F), total_time(0.0), times_count(1), fps(0.F), total_created(0), total_destroyed(0)
 {
-	input = DBG_NEW InputModule(this);
+	//input = DBG_NEW InputModule(this);
 	resource = DBG_NEW ResourceManager(this);
 
-	module_add(input);
+	//module_add(input);
 
-	main_scene = DBG_NEW Scene(resource);
+	main_scene = DBG_NEW Scene(this,resource);
 	//renderer = DBG_NEW RenderModule(this, resource, main_scene);
 	//module_add(renderer);
 
@@ -57,11 +59,14 @@ bool App::initialize()
 		ret = modules[i]->start();
 	}
 
+	last_time = Clock::now();
+
 	return ret;
 }
 
 Update_State App::update()
 {
+	auto now = Clock::now();
 	Update_State ret = UPDATE_CONTINUE;
 
 	for (unsigned int i = 0; i < modules.size() && ret == UPDATE_CONTINUE; ++i)
@@ -78,13 +83,30 @@ Update_State App::update()
 		ret = modules[i]->post_update();
 	}
 
+	delta_time = std::chrono::duration<float,std::chrono::seconds::period>(now - last_time).count();
+	total_time += delta_time;
+#ifdef RELEASE
+	std::cout << delta_time << std::endl;
+#endif // RELEASE
+
+
+	average_delta_time = average_delta_time + ((delta_time - average_delta_time) / times_count);
+	fps = 1 / delta_time;
+	average_fps = average_fps + ((fps - average_fps) / times_count);
+	times_count++;
+
+	delta_time_list.push_back(delta_time);
+	last_time = now;
+	quit = (total_time > MAX_TIME) ? true : false;
 	return (quit) ? UPDATE_STOP : ret;
 }
 
 bool App::clean_up()
 {
 	bool ret = true;
-	main_scene->clean_up();
+	total_created = main_scene->total_created;
+	total_destroyed = main_scene->total_destroyed;
+
 	for (int i = modules.size() - 1; i >= 0 && ret; --i)
 	{
 		ret = modules[i]->clean_up();
@@ -92,10 +114,9 @@ bool App::clean_up()
 	}
 	modules.clear();
 
-	// resource cleanup call TODO
-
 	RELEASE(resource);
 	resource = nullptr;
+
 
 	main_scene->clean_up();
 

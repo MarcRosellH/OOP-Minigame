@@ -16,7 +16,7 @@ public:
 	virtual ~ComponentCamera();
 
 	void start() override;
-	void update() override;
+	void update(float dt) override;
 	void clean_up() override;
 
 	glm::mat4 get_view_matrix();

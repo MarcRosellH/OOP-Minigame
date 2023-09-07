@@ -16,11 +16,13 @@ Object::Object(Scene* _scene, bool _active) : scene(_scene), active(_active), pa
 	/*Component* transform_component_aux = DBG_NEW ComponentTransform(this);
 	components.push_back(transform_component_aux);*/
 	scene->total_count++;
+	scene->total_created++;
 }
 
 Object::~Object()
 {
 	scene->total_count--;
+	scene->total_destroyed++;
 	clean_up();
 }
 
@@ -62,16 +64,16 @@ void Object::start()
 	}
 }
 
-void Object::update()
+void Object::update(float dt)
 {
 	for (int i = 0; active && i < components.size(); ++i)
 	{
-		components[i]->update();
+		components[i]->update(dt);
 	}
 
 	for (int i = 0; i < child.size(); ++i)
 	{
-		child[i]->update();
+		child[i]->update(dt);
 	}
 	scene->object_count++;
 	if (scene->total_count < MAX_OBJECTS)

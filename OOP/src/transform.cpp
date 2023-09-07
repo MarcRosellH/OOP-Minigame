@@ -28,7 +28,7 @@ void ComponentTransform::start()
 {
 }
 
-void ComponentTransform::update()
+void ComponentTransform::update(float dt)
 {
 }
 

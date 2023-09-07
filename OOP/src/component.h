@@ -21,7 +21,7 @@ public:
 	virtual ~Component() {}
 
 	virtual void start() {}
-	virtual void update() {}
+	virtual void update(float dt) {}
 	virtual void clean_up() {}
 
 private:

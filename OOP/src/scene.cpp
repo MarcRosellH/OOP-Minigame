@@ -13,11 +13,12 @@
 #include "object.h"
 #include "camera.h"
 #include "transform.h"
+#include "app.h"
 
-Scene::Scene(ResourceManager* _resource) : resource(_resource), object_count(0), total_count(0)
+Scene::Scene(App* _app, ResourceManager* _resource) : app(_app), resource(_resource), object_count(0), total_count(0), total_created(0), total_destroyed(0)
 {
 	root = DBG_NEW Object(this, true);
-
+	camera_ref = nullptr;
 	camera = DBG_NEW Object(this, true);
 	camera->add_component(COMPONENT_TYPE::COMPONENT_CAMERA);
 	camera->start();
@@ -42,14 +43,13 @@ bool Scene::update()
 		to_delete_objects.pop_back();
 	}
 	object_count = 0;
-	root->update();
-	camera->update();
-	if (total_count != last_max_count)
+	root->update(app->delta_time);
+	camera->update(app->delta_time);
+	/*if (total_count != last_max_count)
 	{
-		system("cls");
 		std::cout << total_count << std::endl;
 	}
-	last_max_count = total_count;
+	last_max_count = total_count;*/
 	resource->get_render_packs_vector()->clear();
 	return true;
 }

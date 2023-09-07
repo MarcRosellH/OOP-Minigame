@@ -16,7 +16,7 @@ public:
 	virtual ~ComponentMeshRender();
 
 	void start() override;
-	void update() override;
+	void update(float dt) override;
 	void clean_up() override;
 
 	void request_model();

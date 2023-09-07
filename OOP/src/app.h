@@ -7,12 +7,16 @@
 
 #include "module.h"
 
+#define MAX_TIME 10.0
+
 enum Update_State;
 
 class RenderModule;
 class InputModule;
 class ResourceManager;
 class Scene;
+
+typedef std::chrono::steady_clock Clock;
 
 class App
 {
@@ -21,11 +25,25 @@ public:
 	RenderModule* renderer = nullptr;
 	InputModule* input = nullptr;
 
+	float average_delta_time;
+	float average_fps;
+
+	unsigned long long total_created;
+	unsigned long long total_destroyed;
+	float delta_time;
+
+	std::vector<float> delta_time_list;
+
 private:
 	// Private internal data
 	bool quit;
 
-	std::chrono::steady_clock::time_point frame_begin;	// High performance timer to overview application efficiency
+	Clock::time_point last_time; // High performance timer to overview application efficiency
+
+	float total_time;
+	float fps;
+	unsigned int times_count;
+
 	std::vector<Module*> modules;
 
 	ResourceManager* resource;

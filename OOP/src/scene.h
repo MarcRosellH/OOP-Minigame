@@ -7,14 +7,13 @@
 class Object;
 class ResourceManager;
 class ComponentCamera;
-
-#define MAX_OBJECTS 1024
+class App;
 
 class Scene
 {
 public:
     // Public methods
-    Scene(ResourceManager* _resource);
+    Scene(App* _app, ResourceManager* _resource);
     ~Scene();
 
     bool update();
@@ -36,6 +35,9 @@ public:
     unsigned int total_count;
     unsigned int last_max_count;
 
+    unsigned long long total_created;
+    unsigned long long total_destroyed;
+
     std::vector<Object*> to_delete_objects;
 
 private:
@@ -44,6 +46,8 @@ private:
     Object* camera;
 
     ResourceManager* resource;
+
+    App* app;
 };
 
 #endif // !__SCENE_H__

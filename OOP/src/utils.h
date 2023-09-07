@@ -7,6 +7,8 @@
 #include <assert.h>
 #include <string>
 
+#define MAX_OBJECTS 1024
+
 #define RELEASE(x)\
 	{\
 		if(x != nullptr)\

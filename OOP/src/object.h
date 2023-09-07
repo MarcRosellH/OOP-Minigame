@@ -29,7 +29,7 @@ public:
 	Component* add_component(COMPONENT_TYPE);
 
 	void start();
-	void update();
+	void update(float dt);
 	void clean_up();
 
 	void set_active(bool);

@@ -17,7 +17,7 @@ public:
 	virtual ~ComponentTransform();
 
 	void start() override;
-	void update() override;
+	void update(float dt) override;
 	void clean_up() override;
 
 	void set_position(glm::vec3);

@@ -24,7 +24,7 @@ void ComponentMeshRender::start()
 	request_model();
 }
 
-void ComponentMeshRender::update()
+void ComponentMeshRender::update(float dt)
 {
 	if (to_render)
 	{
