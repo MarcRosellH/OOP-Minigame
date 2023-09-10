@@ -15,7 +15,7 @@
 #include "transform.h"
 #include "app.h"
 
-Scene::Scene(App* _app, ResourceManager* _resource) : app(_app), resource(_resource), object_count(0), total_count(0), total_created(0), total_destroyed(0)
+Scene::Scene(App* _app, ResourceManager* _resource) : app(_app), resource(_resource), object_count(0), total_count(0)
 {
 	root = DBG_NEW Object(this, true);
 	camera_ref = nullptr;

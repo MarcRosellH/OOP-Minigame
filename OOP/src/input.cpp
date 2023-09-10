@@ -20,7 +20,7 @@ InputModule::~InputModule()
 Update_State InputModule::pre_update()
 {
 
-	glfwPollEvents();
+	//glfwPollEvents();
 
 	return UPDATE_CONTINUE;
 }

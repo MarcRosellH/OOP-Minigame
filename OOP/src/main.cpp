@@ -9,6 +9,7 @@
 #include "utils.h"
 
 #include "module.h"
+#include "scene.h"
 
 enum Main_State
 {
@@ -42,23 +43,44 @@ int main()
 			ASSERT(app->initialize(), "Error when initializing the application!");
 			state = MAIN_UPDATE;
 			LOG("Update application loop...");
+			app->last_time = Clock::now();
 			break;
 
 		case MAIN_UPDATE:
+		{
 			update_state = app->update();
+			auto now = Clock::now();
 			ASSERT(update_state != UPDATE_ERROR, "Error when updating the application!");
+
+			app->delta_time = std::chrono::duration<float, std::chrono::seconds::period>(now - app->last_time).count();
+			app->total_time += app->delta_time;
+
+
+			app->average_delta_time = app->average_delta_time + ((app->delta_time - app->average_delta_time) / app->times_count);
+			app->fps = 1 / app->delta_time;
+			app->average_fps = app->average_fps + ((app->fps - app->average_fps) / app->times_count);
+			app->times_count++;
+
+			app->delta_time_list.push_back(app->delta_time);
+			app->last_time = now;
+
 			(update_state == UPDATE_STOP) ? state = MAIN_FINISH : 0;
 			break;
-
+		}
 		case MAIN_FINISH:
+			Scene* ref = app->get_scene();
 			LOG("Cleaning up application...");
 			ASSERT(app->clean_up(), "Error when cleaning up the application!");
 			state = MAIN_EXIT;
 			break;
 		}
 	}
-
-	std::string name = std::string("output_" + std::to_string(MAX_OBJECTS) + "_objects_in_" + std::to_string((int)MAX_TIME)+".txt");
+#ifdef _WIN64
+	std::string platform = "x64";
+#elif _WIN32
+	std::string platform = "x86";
+#endif
+	std::string name = std::string(platform + "output_" + std::to_string(MAX_OBJECTS) + "_objects_in_" + std::to_string((int)MAX_TIME)+".txt");
 	std::ofstream outfile(name);
 	for (unsigned long long i = 0; i < app->delta_time_list.size(); ++i)
 	{
@@ -69,8 +91,6 @@ int main()
 
 	std::cout << "\nAverage update time: " << app->average_delta_time << " seconds" << std::endl;
 	std::cout << "Average updates per second: " << app->average_fps  << std::endl;
-	std::cout << "In this time there were a total of " << app->total_created << " objects created." << std::endl;
-	std::cout << "In this time there were a total of " << app->total_destroyed << " objects destroyed." << std::endl;
 	std::cout << "Update times stored in file " << name << std::endl;
 	std::cout << "\nPress any key to close..." << std::endl;
 	char a = getchar();

@@ -15,7 +15,7 @@
 #include "resource_manager.h"
 #include "scene.h"
 
-App::App() : quit(false), average_delta_time(0.F), average_fps(0.F), delta_time(0.F), total_time(0.0), times_count(1), fps(0.F), total_created(0), total_destroyed(0)
+App::App() : quit(false), average_delta_time(0.F), average_fps(0.F), delta_time(0.F), total_time(0.F), times_count(1), fps(0.F)
 {
 	//input = DBG_NEW InputModule(this);
 	resource = DBG_NEW ResourceManager(this);
@@ -59,14 +59,11 @@ bool App::initialize()
 		ret = modules[i]->start();
 	}
 
-	last_time = Clock::now();
-
 	return ret;
 }
 
 Update_State App::update()
 {
-	auto now = Clock::now();
 	Update_State ret = UPDATE_CONTINUE;
 
 	for (unsigned int i = 0; i < modules.size() && ret == UPDATE_CONTINUE; ++i)
@@ -83,20 +80,6 @@ Update_State App::update()
 		ret = modules[i]->post_update();
 	}
 
-	delta_time = std::chrono::duration<float,std::chrono::seconds::period>(now - last_time).count();
-	total_time += delta_time;
-#ifdef RELEASE
-	std::cout << delta_time << std::endl;
-#endif // RELEASE
-
-
-	average_delta_time = average_delta_time + ((delta_time - average_delta_time) / times_count);
-	fps = 1 / delta_time;
-	average_fps = average_fps + ((fps - average_fps) / times_count);
-	times_count++;
-
-	delta_time_list.push_back(delta_time);
-	last_time = now;
 	quit = (total_time > MAX_TIME) ? true : false;
 	return (quit) ? UPDATE_STOP : ret;
 }
@@ -104,8 +87,8 @@ Update_State App::update()
 bool App::clean_up()
 {
 	bool ret = true;
-	total_created = main_scene->total_created;
-	total_destroyed = main_scene->total_destroyed;
+	/*total_created = main_scene->total_created;
+	total_destroyed = main_scene->total_destroyed;*/
 
 	for (int i = modules.size() - 1; i >= 0 && ret; --i)
 	{
@@ -136,6 +119,11 @@ void App::module_add(Module* _module)
 void App::quit_app()
 {
 	this->quit = true;
+}
+
+Scene* App::get_scene()
+{
+	return main_scene;
 }
 
 void on_glfw_error(int _error_code, const char* _error_message)

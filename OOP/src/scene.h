@@ -35,9 +35,6 @@ public:
     unsigned int total_count;
     unsigned int last_max_count;
 
-    unsigned long long total_created;
-    unsigned long long total_destroyed;
-
     std::vector<Object*> to_delete_objects;
 
 private:

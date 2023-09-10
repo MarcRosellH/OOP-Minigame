@@ -16,13 +16,11 @@ Object::Object(Scene* _scene, bool _active) : scene(_scene), active(_active), pa
 	/*Component* transform_component_aux = DBG_NEW ComponentTransform(this);
 	components.push_back(transform_component_aux);*/
 	scene->total_count++;
-	scene->total_created++;
 }
 
 Object::~Object()
 {
 	scene->total_count--;
-	scene->total_destroyed++;
 	clean_up();
 }
 

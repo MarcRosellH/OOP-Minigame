@@ -28,7 +28,7 @@ ResourceManager::~ResourceManager()
 void ResourceManager::initial_load()
 {
 
-    load_model("Patrick/Patrick.obj");
+    //load_model("Patrick/Patrick.obj");
     // LOAD SHADERS
     // 
     // [Deferred Render] Geometry Pass Program
@@ -136,250 +136,250 @@ void ResourceManager::add_render_pack(unsigned int _mesh_index, glm::mat4 _matri
 //    return textured_mesh_index;
 //}
 
-void process_assimp_mesh(const aiScene* scene, aiMesh* mesh, Mesh* myMesh, unsigned int baseMeshMaterialIndex, std::vector<unsigned int>& submeshMaterialIndices)
-{
-    std::vector<float> vertices;
-    std::vector<unsigned int> indices;
-
-    bool hasTexCoords = false;
-    bool hasTangentSpace = false;
-
-    // process vertices
-    for (unsigned int i = 0; i < mesh->mNumVertices; i++)
-    {
-        vertices.push_back(mesh->mVertices[i].x);
-        vertices.push_back(mesh->mVertices[i].y);
-        vertices.push_back(mesh->mVertices[i].z);
-        vertices.push_back(mesh->mNormals[i].x);
-        vertices.push_back(mesh->mNormals[i].y);
-        vertices.push_back(mesh->mNormals[i].z);
-
-        if (mesh->mTextureCoords[0]) // does the mesh contain texture coordinates?
-        {
-            hasTexCoords = true;
-            vertices.push_back(mesh->mTextureCoords[0][i].x);
-            vertices.push_back(mesh->mTextureCoords[0][i].y);
-        }
-
-        if (mesh->mTangents != nullptr && mesh->mBitangents)
-        {
-            hasTangentSpace = true;
-            vertices.push_back(mesh->mTangents[i].x);
-            vertices.push_back(mesh->mTangents[i].y);
-            vertices.push_back(mesh->mTangents[i].z);
-
-            // For some reason ASSIMP gives me the bitangents flipped.
-            // Maybe it's my fault, but when I generate my own geometry
-            // in other files (see the generation of standard assets)
-            // and all the bitangents have the orientation I expect,
-            // everything works ok.
-            // I think that (even if the documentation says the opposite)
-            // it returns a left-handed tangent space matrix.
-            // SOLUTION: I invert the components of the bitangent here.
-            vertices.push_back(-mesh->mBitangents[i].x);
-            vertices.push_back(-mesh->mBitangents[i].y);
-            vertices.push_back(-mesh->mBitangents[i].z);
-        }
-    }
-
-    // process indices
-    for (unsigned int i = 0; i < mesh->mNumFaces; i++)
-    {
-        aiFace face = mesh->mFaces[i];
-        for (unsigned int j = 0; j < face.mNumIndices; j++)
-        {
-            indices.push_back(face.mIndices[j]);
-        }
-    }
-
-    // store the proper (previously proceessed) material for this mesh
-    submeshMaterialIndices.push_back(baseMeshMaterialIndex + mesh->mMaterialIndex);
-
-    // create the vertex format
-    VertexBufferLayout vertexBufferLayout = {};
-    vertexBufferLayout.attributes.push_back(VertexBufferAttribute{ 0, 3, 0 });
-    vertexBufferLayout.attributes.push_back(VertexBufferAttribute{ 1, 3, 3 * sizeof(float) });
-    vertexBufferLayout.stride = 6 * sizeof(float);
-    if (hasTexCoords)
-    {
-        vertexBufferLayout.attributes.push_back(VertexBufferAttribute{ 2, 2, vertexBufferLayout.stride });
-        vertexBufferLayout.stride += 2 * sizeof(float);
-    }
-    if (hasTangentSpace)
-    {
-        vertexBufferLayout.attributes.push_back(VertexBufferAttribute{ 3, 3, vertexBufferLayout.stride });
-        vertexBufferLayout.stride += 3 * sizeof(float);
-
-        vertexBufferLayout.attributes.push_back(VertexBufferAttribute{ 4, 3, vertexBufferLayout.stride });
-        vertexBufferLayout.stride += 3 * sizeof(float);
-    }
-
-    // add the submesh into the mesh
-    Submesh submesh = {};
-    submesh.vertex_buffer_layout = vertexBufferLayout;
-    submesh.vertices.swap(vertices);
-    submesh.indices.swap(indices);
-    myMesh->submeshes.push_back(submesh);
-}
-
-void ResourceManager::process_assimp_material(aiMaterial* material, Material& myMaterial, std::string directory)
-{
-    aiString name;
-    aiColor3D diffuseColor;
-    aiColor3D emissiveColor;
-    aiColor3D specularColor;
-    ai_real shininess;
-    material->Get(AI_MATKEY_NAME, name);
-    material->Get(AI_MATKEY_COLOR_DIFFUSE, diffuseColor);
-    material->Get(AI_MATKEY_COLOR_EMISSIVE, emissiveColor);
-    material->Get(AI_MATKEY_COLOR_SPECULAR, specularColor);
-    material->Get(AI_MATKEY_SHININESS, shininess);
-
-    myMaterial.name = name.C_Str();
-    myMaterial.albedo = glm::vec3(diffuseColor.r, diffuseColor.g, diffuseColor.b);
-    myMaterial.emissive = glm::vec3(emissiveColor.r, emissiveColor.g, emissiveColor.b);
-    myMaterial.smoothness = shininess / 256.0f;
-
-    aiString aiFilename;
-    if (material->GetTextureCount(aiTextureType_DIFFUSE) > 0)
-    {
-        material->GetTexture(aiTextureType_DIFFUSE, 0, &aiFilename);
-        std::string filename = aiFilename.C_Str();
-        std::string filepath = make_path(directory, filename);
-        myMaterial.albedo_texture_index = load_texture_2D(filepath.c_str());
-    }
-    if (material->GetTextureCount(aiTextureType_EMISSIVE) > 0)
-    {
-        material->GetTexture(aiTextureType_EMISSIVE, 0, &aiFilename);
-        std::string filename = aiFilename.C_Str();
-        std::string filepath = make_path(directory, filename);
-        myMaterial.emissive_texture_index = load_texture_2D(filepath.c_str());
-    }
-    if (material->GetTextureCount(aiTextureType_SPECULAR) > 0)
-    {
-        material->GetTexture(aiTextureType_SPECULAR, 0, &aiFilename);
-        std::string filename = aiFilename.C_Str();
-        std::string filepath = make_path(directory, filename);
-        myMaterial.specular_texture_index = load_texture_2D(filepath.c_str());
-    }
-    if (material->GetTextureCount(aiTextureType_NORMALS) > 0)
-    {
-        material->GetTexture(aiTextureType_NORMALS, 0, &aiFilename);
-        std::string filename = aiFilename.C_Str();
-        std::string filepath = make_path(directory, filename);
-        myMaterial.normals_texture_index = load_texture_2D(filepath.c_str());
-    }
-    if (material->GetTextureCount(aiTextureType_HEIGHT) > 0)
-    {
-        material->GetTexture(aiTextureType_HEIGHT, 0, &aiFilename);
-        std::string filename =aiFilename.C_Str();
-        std::string filepath = make_path(directory, filename);
-        myMaterial.bump_texture_index = load_texture_2D(filepath.c_str());
-    }
-
-    //myMaterial.createNormalFromBump();
-}
-
-void process_assimp_node(const aiScene* scene, aiNode* node, Mesh* myMesh, unsigned int baseMeshMaterialIndex, std::vector<unsigned int>& submeshMaterialIndices)
-{
-    // process all the node's meshes (if any)
-    for (unsigned int i = 0; i < node->mNumMeshes; i++)
-    {
-        aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-        process_assimp_mesh(scene, mesh, myMesh, baseMeshMaterialIndex, submeshMaterialIndices);
-    }
-
-    // then do the same for each of its children
-    for (unsigned int i = 0; i < node->mNumChildren; i++)
-    {
-        process_assimp_node(scene, node->mChildren[i], myMesh, baseMeshMaterialIndex, submeshMaterialIndices);
-    }
-}
-
-unsigned int ResourceManager::load_model(const char* _file_name)
-{
-    const aiScene* scene = aiImportFile(_file_name,
-        aiProcess_Triangulate |
-        aiProcess_GenSmoothNormals |
-        aiProcess_CalcTangentSpace |
-        aiProcess_JoinIdenticalVertices |
-        aiProcess_PreTransformVertices |
-        aiProcess_ImproveCacheLocality |
-        aiProcess_OptimizeMeshes |
-        aiProcess_SortByPType);
-
-    if (!scene)
-    {
-        LOG("Error loading mesh %s: %s", _file_name, aiGetErrorString());
-        return UINT32_MAX;
-    }
-
-    meshes.push_back(Mesh{});
-    Mesh& mesh = meshes.back();
-    unsigned int mesh_index = (unsigned int)meshes.size() - 1u;
-
-    models.push_back(Model{});
-    Model& model = models.back();
-    model.mesh_index = mesh_index;
-    model.name = get_filepath_name(_file_name);
-    unsigned int modelIdx = (unsigned int)models.size() - 1u;
-
-    std::string directory = get_directory_part(_file_name);
-
-    // Create a list of materials
-    unsigned int baseMeshMaterialIndex = (unsigned int)materials.size();
-    for (unsigned int i = 0; i < scene->mNumMaterials; ++i)
-    {
-        materials.push_back(Material{});
-        Material& material = materials.back();
-        process_assimp_material(scene->mMaterials[i], material, directory);
-    }
-
-    process_assimp_node(scene, scene->mRootNode, &mesh, baseMeshMaterialIndex, model.material_index);
-
-    aiReleaseImport(scene);
-
-    unsigned int vertexBufferSize = 0;
-    unsigned int indexBufferSize = 0;
-
-    for (unsigned int i = 0; i < mesh.submeshes.size(); ++i)
-    {
-        vertexBufferSize += mesh.submeshes[i].vertices.size() * sizeof(float);
-        indexBufferSize += mesh.submeshes[i].indices.size() * sizeof(unsigned int);
-    }
-
-    /*glGenBuffers(1, &mesh.vertex_buffer_handle);
-    glBindBuffer(GL_ARRAY_BUFFER, mesh.vertex_buffer_handle);
-    glBufferData(GL_ARRAY_BUFFER, vertexBufferSize, NULL, GL_STATIC_DRAW);
-
-    glGenBuffers(1, &mesh.index_buffer_handle);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.index_buffer_handle);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexBufferSize, NULL, GL_STATIC_DRAW);*/
-
-    unsigned int indicesOffset = 0;
-    unsigned int verticesOffset = 0;
-
-    for (unsigned int i = 0; i < mesh.submeshes.size(); ++i)
-    {
-        const void* verticesData = mesh.submeshes[i].vertices.data();
-        const unsigned int   verticesSize = mesh.submeshes[i].vertices.size() * sizeof(float);
-        //glBufferSubData(GL_ARRAY_BUFFER, verticesOffset, verticesSize, verticesData);
-        mesh.submeshes[i].vertex_offset = verticesOffset;
-        verticesOffset += verticesSize;
-
-        const void* indicesData = mesh.submeshes[i].indices.data();
-        const unsigned int   indicesSize = mesh.submeshes[i].indices.size() * sizeof(unsigned int);
-        //glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, indicesOffset, indicesSize, indicesData);
-        mesh.submeshes[i].index_offset = indicesOffset;
-        indicesOffset += indicesSize;
-    }
-
-   /* glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);*/
-
-
-    return modelIdx;
-}
+//void process_assimp_mesh(const aiScene* scene, aiMesh* mesh, Mesh* myMesh, unsigned int baseMeshMaterialIndex, std::vector<unsigned int>& submeshMaterialIndices)
+//{
+//    std::vector<float> vertices;
+//    std::vector<unsigned int> indices;
+//
+//    bool hasTexCoords = false;
+//    bool hasTangentSpace = false;
+//
+//    // process vertices
+//    for (unsigned int i = 0; i < mesh->mNumVertices; i++)
+//    {
+//        vertices.push_back(mesh->mVertices[i].x);
+//        vertices.push_back(mesh->mVertices[i].y);
+//        vertices.push_back(mesh->mVertices[i].z);
+//        vertices.push_back(mesh->mNormals[i].x);
+//        vertices.push_back(mesh->mNormals[i].y);
+//        vertices.push_back(mesh->mNormals[i].z);
+//
+//        if (mesh->mTextureCoords[0]) // does the mesh contain texture coordinates?
+//        {
+//            hasTexCoords = true;
+//            vertices.push_back(mesh->mTextureCoords[0][i].x);
+//            vertices.push_back(mesh->mTextureCoords[0][i].y);
+//        }
+//
+//        if (mesh->mTangents != nullptr && mesh->mBitangents)
+//        {
+//            hasTangentSpace = true;
+//            vertices.push_back(mesh->mTangents[i].x);
+//            vertices.push_back(mesh->mTangents[i].y);
+//            vertices.push_back(mesh->mTangents[i].z);
+//
+//            // For some reason ASSIMP gives me the bitangents flipped.
+//            // Maybe it's my fault, but when I generate my own geometry
+//            // in other files (see the generation of standard assets)
+//            // and all the bitangents have the orientation I expect,
+//            // everything works ok.
+//            // I think that (even if the documentation says the opposite)
+//            // it returns a left-handed tangent space matrix.
+//            // SOLUTION: I invert the components of the bitangent here.
+//            vertices.push_back(-mesh->mBitangents[i].x);
+//            vertices.push_back(-mesh->mBitangents[i].y);
+//            vertices.push_back(-mesh->mBitangents[i].z);
+//        }
+//    }
+//
+//    // process indices
+//    for (unsigned int i = 0; i < mesh->mNumFaces; i++)
+//    {
+//        aiFace face = mesh->mFaces[i];
+//        for (unsigned int j = 0; j < face.mNumIndices; j++)
+//        {
+//            indices.push_back(face.mIndices[j]);
+//        }
+//    }
+//
+//    // store the proper (previously proceessed) material for this mesh
+//    submeshMaterialIndices.push_back(baseMeshMaterialIndex + mesh->mMaterialIndex);
+//
+//    // create the vertex format
+//    VertexBufferLayout vertexBufferLayout = {};
+//    vertexBufferLayout.attributes.push_back(VertexBufferAttribute{ 0, 3, 0 });
+//    vertexBufferLayout.attributes.push_back(VertexBufferAttribute{ 1, 3, 3 * sizeof(float) });
+//    vertexBufferLayout.stride = 6 * sizeof(float);
+//    if (hasTexCoords)
+//    {
+//        vertexBufferLayout.attributes.push_back(VertexBufferAttribute{ 2, 2, vertexBufferLayout.stride });
+//        vertexBufferLayout.stride += 2 * sizeof(float);
+//    }
+//    if (hasTangentSpace)
+//    {
+//        vertexBufferLayout.attributes.push_back(VertexBufferAttribute{ 3, 3, vertexBufferLayout.stride });
+//        vertexBufferLayout.stride += 3 * sizeof(float);
+//
+//        vertexBufferLayout.attributes.push_back(VertexBufferAttribute{ 4, 3, vertexBufferLayout.stride });
+//        vertexBufferLayout.stride += 3 * sizeof(float);
+//    }
+//
+//    // add the submesh into the mesh
+//    Submesh submesh = {};
+//    submesh.vertex_buffer_layout = vertexBufferLayout;
+//    submesh.vertices.swap(vertices);
+//    submesh.indices.swap(indices);
+//    myMesh->submeshes.push_back(submesh);
+//}
+//
+//void ResourceManager::process_assimp_material(aiMaterial* material, Material& myMaterial, std::string directory)
+//{
+//    aiString name;
+//    aiColor3D diffuseColor;
+//    aiColor3D emissiveColor;
+//    aiColor3D specularColor;
+//    ai_real shininess;
+//    material->Get(AI_MATKEY_NAME, name);
+//    material->Get(AI_MATKEY_COLOR_DIFFUSE, diffuseColor);
+//    material->Get(AI_MATKEY_COLOR_EMISSIVE, emissiveColor);
+//    material->Get(AI_MATKEY_COLOR_SPECULAR, specularColor);
+//    material->Get(AI_MATKEY_SHININESS, shininess);
+//
+//    myMaterial.name = name.C_Str();
+//    myMaterial.albedo = glm::vec3(diffuseColor.r, diffuseColor.g, diffuseColor.b);
+//    myMaterial.emissive = glm::vec3(emissiveColor.r, emissiveColor.g, emissiveColor.b);
+//    myMaterial.smoothness = shininess / 256.0f;
+//
+//    aiString aiFilename;
+//    if (material->GetTextureCount(aiTextureType_DIFFUSE) > 0)
+//    {
+//        material->GetTexture(aiTextureType_DIFFUSE, 0, &aiFilename);
+//        std::string filename = aiFilename.C_Str();
+//        std::string filepath = make_path(directory, filename);
+//        myMaterial.albedo_texture_index = load_texture_2D(filepath.c_str());
+//    }
+//    if (material->GetTextureCount(aiTextureType_EMISSIVE) > 0)
+//    {
+//        material->GetTexture(aiTextureType_EMISSIVE, 0, &aiFilename);
+//        std::string filename = aiFilename.C_Str();
+//        std::string filepath = make_path(directory, filename);
+//        myMaterial.emissive_texture_index = load_texture_2D(filepath.c_str());
+//    }
+//    if (material->GetTextureCount(aiTextureType_SPECULAR) > 0)
+//    {
+//        material->GetTexture(aiTextureType_SPECULAR, 0, &aiFilename);
+//        std::string filename = aiFilename.C_Str();
+//        std::string filepath = make_path(directory, filename);
+//        myMaterial.specular_texture_index = load_texture_2D(filepath.c_str());
+//    }
+//    if (material->GetTextureCount(aiTextureType_NORMALS) > 0)
+//    {
+//        material->GetTexture(aiTextureType_NORMALS, 0, &aiFilename);
+//        std::string filename = aiFilename.C_Str();
+//        std::string filepath = make_path(directory, filename);
+//        myMaterial.normals_texture_index = load_texture_2D(filepath.c_str());
+//    }
+//    if (material->GetTextureCount(aiTextureType_HEIGHT) > 0)
+//    {
+//        material->GetTexture(aiTextureType_HEIGHT, 0, &aiFilename);
+//        std::string filename =aiFilename.C_Str();
+//        std::string filepath = make_path(directory, filename);
+//        myMaterial.bump_texture_index = load_texture_2D(filepath.c_str());
+//    }
+//
+//    //myMaterial.createNormalFromBump();
+//}
+//
+//void process_assimp_node(const aiScene* scene, aiNode* node, Mesh* myMesh, unsigned int baseMeshMaterialIndex, std::vector<unsigned int>& submeshMaterialIndices)
+//{
+//    // process all the node's meshes (if any)
+//    for (unsigned int i = 0; i < node->mNumMeshes; i++)
+//    {
+//        aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
+//        process_assimp_mesh(scene, mesh, myMesh, baseMeshMaterialIndex, submeshMaterialIndices);
+//    }
+//
+//    // then do the same for each of its children
+//    for (unsigned int i = 0; i < node->mNumChildren; i++)
+//    {
+//        process_assimp_node(scene, node->mChildren[i], myMesh, baseMeshMaterialIndex, submeshMaterialIndices);
+//    }
+//}
+//
+//unsigned int ResourceManager::load_model(const char* _file_name)
+//{
+//    const aiScene* scene = aiImportFile(_file_name,
+//        aiProcess_Triangulate |
+//        aiProcess_GenSmoothNormals |
+//        aiProcess_CalcTangentSpace |
+//        aiProcess_JoinIdenticalVertices |
+//        aiProcess_PreTransformVertices |
+//        aiProcess_ImproveCacheLocality |
+//        aiProcess_OptimizeMeshes |
+//        aiProcess_SortByPType);
+//
+//    if (!scene)
+//    {
+//        LOG("Error loading mesh %s: %s", _file_name, aiGetErrorString());
+//        return UINT32_MAX;
+//    }
+//
+//    meshes.push_back(Mesh{});
+//    Mesh& mesh = meshes.back();
+//    unsigned int mesh_index = (unsigned int)meshes.size() - 1u;
+//
+//    models.push_back(Model{});
+//    Model& model = models.back();
+//    model.mesh_index = mesh_index;
+//    model.name = get_filepath_name(_file_name);
+//    unsigned int modelIdx = (unsigned int)models.size() - 1u;
+//
+//    std::string directory = get_directory_part(_file_name);
+//
+//    // Create a list of materials
+//    unsigned int baseMeshMaterialIndex = (unsigned int)materials.size();
+//    for (unsigned int i = 0; i < scene->mNumMaterials; ++i)
+//    {
+//        materials.push_back(Material{});
+//        Material& material = materials.back();
+//        process_assimp_material(scene->mMaterials[i], material, directory);
+//    }
+//
+//    process_assimp_node(scene, scene->mRootNode, &mesh, baseMeshMaterialIndex, model.material_index);
+//
+//    aiReleaseImport(scene);
+//
+//    unsigned int vertexBufferSize = 0;
+//    unsigned int indexBufferSize = 0;
+//
+//    for (unsigned int i = 0; i < mesh.submeshes.size(); ++i)
+//    {
+//        vertexBufferSize += mesh.submeshes[i].vertices.size() * sizeof(float);
+//        indexBufferSize += mesh.submeshes[i].indices.size() * sizeof(unsigned int);
+//    }
+//
+//    /*glGenBuffers(1, &mesh.vertex_buffer_handle);
+//    glBindBuffer(GL_ARRAY_BUFFER, mesh.vertex_buffer_handle);
+//    glBufferData(GL_ARRAY_BUFFER, vertexBufferSize, NULL, GL_STATIC_DRAW);
+//
+//    glGenBuffers(1, &mesh.index_buffer_handle);
+//    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.index_buffer_handle);
+//    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexBufferSize, NULL, GL_STATIC_DRAW);*/
+//
+//    unsigned int indicesOffset = 0;
+//    unsigned int verticesOffset = 0;
+//
+//    for (unsigned int i = 0; i < mesh.submeshes.size(); ++i)
+//    {
+//        const void* verticesData = mesh.submeshes[i].vertices.data();
+//        const unsigned int   verticesSize = mesh.submeshes[i].vertices.size() * sizeof(float);
+//        //glBufferSubData(GL_ARRAY_BUFFER, verticesOffset, verticesSize, verticesData);
+//        mesh.submeshes[i].vertex_offset = verticesOffset;
+//        verticesOffset += verticesSize;
+//
+//        const void* indicesData = mesh.submeshes[i].indices.data();
+//        const unsigned int   indicesSize = mesh.submeshes[i].indices.size() * sizeof(unsigned int);
+//        //glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, indicesOffset, indicesSize, indicesData);
+//        mesh.submeshes[i].index_offset = indicesOffset;
+//        indicesOffset += indicesSize;
+//    }
+//
+//   /* glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+//    glBindBuffer(GL_ARRAY_BUFFER, 0);*/
+//
+//
+//    return modelIdx;
+//}
 
 
 // Shader loader
