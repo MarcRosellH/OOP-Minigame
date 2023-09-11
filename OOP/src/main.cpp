@@ -81,6 +81,14 @@ int main()
 	std::string platform = "x86";
 #endif
 	std::string name = std::string(platform + "output_" + std::to_string(MAX_OBJECTS) + "_objects_in_" + std::to_string((int)MAX_TIME)+".txt");
+
+	std::cout << "\nAverage update time: " << app->average_delta_time << " seconds" << std::endl;
+	std::cout << "Average updates per second: " << app->average_fps  << std::endl;
+	//std::cout << "Total Created: " << app->total_created << std::endl;
+	//std::cout << "Total Destroyed: " << app->total_destroyed << std::endl;
+	std::cout << std::to_string(app->delta_time_list.size()) << " update times data in total." << std::endl;
+	std::cout << "Saving update times in file " << name << "..." << std::endl;
+
 	std::ofstream outfile(name);
 	for (unsigned long long i = 0; i < app->delta_time_list.size(); ++i)
 	{
@@ -88,10 +96,9 @@ int main()
 	}
 
 	outfile.close();
+	app->delta_time_list.clear();
 
-	std::cout << "\nAverage update time: " << app->average_delta_time << " seconds" << std::endl;
-	std::cout << "Average updates per second: " << app->average_fps  << std::endl;
-	std::cout << "Update times stored in file " << name << std::endl;
+	std::cout << "Data saved." << std::endl;
 	std::cout << "\nPress any key to close..." << std::endl;
 	char a = getchar();
 	// Release app data
