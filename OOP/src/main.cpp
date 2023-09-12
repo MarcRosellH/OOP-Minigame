@@ -80,7 +80,7 @@ int main()
 #elif _WIN32
 	std::string platform = "x86";
 #endif
-	std::string name = std::string(platform + "output_" + std::to_string(MAX_OBJECTS) + "_objects_in_" + std::to_string((int)MAX_TIME)+".txt");
+	std::string name = std::string(platform + "output_" + std::to_string(MAX_OBJECTS) + "_objects_in_" + std::to_string((int)MAX_TIME)+".csv");
 
 	std::cout << "\nAverage update time: " << app->average_delta_time << " seconds" << std::endl;
 	std::cout << "Average updates per second: " << app->average_fps  << std::endl;

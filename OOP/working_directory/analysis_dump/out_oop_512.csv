@@ -1,0 +1,43 @@
+
+AMDuProfPcm Report
+
+System:,Family(0x19) Model(0x21) Stepping(0x2)
+Number of Sockets :,1
+Number of CCDs :,1
+Number of Cores :,8
+Number of Threads :,16
+SMT Enabled in HW:,True
+Number of Threads sharing L3:,16
+
+CPU Topology:
+Socket, CCD, Core(s)
+0,0, 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15
+
+Core P0 state frequency (MHz):,3800.000000
+Measured DF Frequency (MHz):,0.000000
+Multiplex interval (ms):,0
+Sample interval (ms):,1000
+Version:,4.1.0
+
+Hypervisor Info:
+Hypervisor Enabled:,0
+
+Abbreviation :
+IPC    : Instructions Per CPU Cycle
+CPI    : CPU Cycles Per Instructions
+pti    : Per Thousand Instructions
+ptc    : Per Thousand CPU Cycles
+
+Profile Time: 2023/09/12 09:13:04:344
+Core-0,,,,,
+IC (32B) Fetch Miss Ratio,Op Cache (64B) Fetch Miss Ratio,IC Access (pti),IC Miss (pti),DC Access (pti),
+0.22,0.12,45.53,10.10,416.72,
+0.30,0.29,97.18,29.51,424.75,
+0.18,0.08,32.70,5.74,409.97,
+0.18,0.08,32.49,5.77,410.43,
+0.17,0.09,32.61,5.68,409.93,
+0.19,0.08,35.45,6.60,421.82,
+0.30,0.28,93.72,28.42,427.26,
+0.19,0.08,35.52,6.78,412.35,
+0.19,0.08,37.32,7.19,416.73,
+0.17,0.08,35.60,6.23,411.67,

@@ -7,7 +7,7 @@
 
 #include "module.h"
 
-#define MAX_TIME 10.0
+#define MAX_TIME 11
 
 enum Update_State;
 

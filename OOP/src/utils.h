@@ -7,7 +7,7 @@
 #include <assert.h>
 #include <string>
 
-#define MAX_OBJECTS 1024
+#define MAX_OBJECTS 2048
 
 #define RELEASE(x)\
 	{\
