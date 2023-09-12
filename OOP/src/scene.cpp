@@ -18,7 +18,7 @@
 Scene::Scene(App* _app, ResourceManager* _resource) : app(_app), resource(_resource), object_count(0), total_count(0)
 {
 	root = DBG_NEW Object(this, true);
-	camera_ref = nullptr;
+	/*camera_ref = nullptr;
 	camera = DBG_NEW Object(this, true);
 	camera->add_component(COMPONENT_TYPE::COMPONENT_CAMERA);
 	camera->start();
@@ -26,8 +26,8 @@ Scene::Scene(App* _app, ResourceManager* _resource) : app(_app), resource(_resou
 	ref->set_type(OBJECT_TYPE::ENEMY);
 	ref->add_component(COMPONENT_TYPE::COMPONENT_TRANSFORM);
 	ref->add_component(COMPONENT_TYPE::COMPONENT_MESH_RENDER)->start();
-	ref->add_component(COMPONENT_TYPE::COMPONENT_BEHAVIOUR);
-	ref->transform->set_position(glm::vec3(1.F, 1.F, 1.F));
+	ref->add_component(COMPONENT_TYPE::COMPONENT_BEHAVIOUR);*/
+	/*ref->transform->set_position(glm::vec3(1.F, 1.F, 1.F));*/
 	srand((unsigned)time(NULL));
 }
 
@@ -44,7 +44,7 @@ bool Scene::update()
 	}
 	object_count = 0;
 	root->update(app->delta_time);
-	camera->update(app->delta_time);
+	//camera->update(app->delta_time);
 	/*if (total_count != last_max_count)
 	{
 		std::cout << total_count << std::endl;
